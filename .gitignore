@@ -1,0 +1,16 @@
+﻿AGENTS.md
+CLAUDE.md
+**/AGENTS.md
+**/CLAUDE.md
+.claude/
+**/.claude/
+
+.env
+.env.*
+!.env.example
+
+node_modules/
+.next/
+dist/
+build/
+coverage/

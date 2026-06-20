@@ -1,0 +1,56 @@
+[
+  {
+    "slug": "tailwind",
+    "name": "Tailwind CSS",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework CSS utility-first para estilizar interfaces direto no HTML, sem sair do markup.",
+    "logo_url": null,
+    "official_url": "https://tailwindcss.com/docs",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "tailwindlabs/tailwindcss.com",
+      "branch": "main",
+      "docs_path": "src/docs",
+      "include_globs": ["**/*.mdx", "**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "astro",
+    "name": "Astro",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework web para sites focados em conteúdo, com renderização no servidor e zero JavaScript por padrão.",
+    "logo_url": null,
+    "official_url": "https://docs.astro.build",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "withastro/docs",
+      "branch": "main",
+      "docs_path": "src/content/docs/en",
+      "include_globs": ["**/*.mdx", "**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "prisma",
+    "name": "Prisma ORM",
+    "kind": "library",
+    "category": "backend",
+    "description": "ORM para Node.js e TypeScript com modelagem declarativa, migrations e cliente type-safe.",
+    "logo_url": null,
+    "official_url": "https://www.prisma.io/docs",
+    "license": "Apache-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "prisma/docs",
+      "branch": "main",
+      "docs_path": "content",
+      "include_globs": ["**/*.mdx", "**/*.md"],
+      "exclude_globs": []
+    }
+  }
+]

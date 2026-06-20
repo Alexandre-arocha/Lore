@@ -1,0 +1,20 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - revive
+
+issues:
+  exclude-dirs:
+    - internal/db # sqlc-generated code
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
