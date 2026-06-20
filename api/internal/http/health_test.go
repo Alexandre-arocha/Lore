@@ -49,7 +49,7 @@ func TestHealthStatus(t *testing.T) {
 }
 
 func TestRouterRegistersHealth(t *testing.T) {
-	s := NewServer(nil, "")
+	s := NewServer(nil, nil, nil, "")
 	r := s.Router()
 
 	req := httptest.NewRequest(http.MethodGet, "/api/health", nil)

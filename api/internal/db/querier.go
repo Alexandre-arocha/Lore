@@ -25,6 +25,7 @@ type Querier interface {
 	MarkSourceSynced(ctx context.Context, arg MarkSourceSyncedParams) error
 	// Removes documents of a source whose slug is no longer present in the latest sync.
 	PruneDocuments(ctx context.Context, arg PruneDocumentsParams) error
+	SearchDocuments(ctx context.Context, arg SearchDocumentsParams) ([]SearchDocumentsRow, error)
 	SetSourceNav(ctx context.Context, arg SetSourceNavParams) error
 	SetSourceStatus(ctx context.Context, arg SetSourceStatusParams) error
 	UpsertDocument(ctx context.Context, arg UpsertDocumentParams) (uuid.UUID, error)

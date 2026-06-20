@@ -144,6 +144,85 @@ func (q *Queries) PruneDocuments(ctx context.Context, arg PruneDocumentsParams) 
 	return err
 }
 
+const searchDocuments = `-- name: SearchDocuments :many
+WITH search AS (
+    SELECT websearch_to_tsquery('english', $3::text) AS tsq
+)
+SELECT
+    d.id,
+    d.source_id,
+    s.slug AS source_slug,
+    s.name AS source_name,
+    s.official_url,
+    s.license,
+    d.slug,
+    d.title,
+    ts_headline(
+        'english',
+        d.content_text,
+        search.tsq,
+        'StartSel=<mark>, StopSel=</mark>, MaxFragments=2, MinWords=6, MaxWords=18'
+    )::text AS excerpt,
+    ts_rank(d.search_vector, search.tsq)::float8 AS rank
+FROM documents d
+JOIN sources s ON s.id = d.source_id
+CROSS JOIN search
+WHERE search.tsq @@ d.search_vector
+  AND ($1::text IS NULL OR s.slug = $1::text)
+ORDER BY rank DESC, d.title
+LIMIT $2::int
+`
+
+type SearchDocumentsParams struct {
+	SourceSlug  *string `json:"source_slug"`
+	LimitCount  int32   `json:"limit_count"`
+	SearchQuery string  `json:"search_query"`
+}
+
+type SearchDocumentsRow struct {
+	ID          uuid.UUID `json:"id"`
+	SourceID    uuid.UUID `json:"source_id"`
+	SourceSlug  string    `json:"source_slug"`
+	SourceName  string    `json:"source_name"`
+	OfficialUrl string    `json:"official_url"`
+	License     *string   `json:"license"`
+	Slug        string    `json:"slug"`
+	Title       string    `json:"title"`
+	Excerpt     string    `json:"excerpt"`
+	Rank        float64   `json:"rank"`
+}
+
+func (q *Queries) SearchDocuments(ctx context.Context, arg SearchDocumentsParams) ([]SearchDocumentsRow, error) {
+	rows, err := q.db.Query(ctx, searchDocuments, arg.SourceSlug, arg.LimitCount, arg.SearchQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []SearchDocumentsRow{}
+	for rows.Next() {
+		var i SearchDocumentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.SourceID,
+			&i.SourceSlug,
+			&i.SourceName,
+			&i.OfficialUrl,
+			&i.License,
+			&i.Slug,
+			&i.Title,
+			&i.Excerpt,
+			&i.Rank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertDocument = `-- name: UpsertDocument :one
 INSERT INTO documents (
     id, source_id, slug, path, title, content_html, content_text, toc, position, word_count

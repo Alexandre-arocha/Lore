@@ -1,10 +1,12 @@
-// Command server is the entrypoint for the Atlas HTTP API.
+// Command server is the entrypoint for the Atlas HTTP API. It also runs the
+// River worker that processes documentation ingestion jobs.
 package main
 
 import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,7 +16,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/lore/atlas/api/internal/config"
+	"github.com/lore/atlas/api/internal/db"
 	atlashttp "github.com/lore/atlas/api/internal/http"
+	"github.com/lore/atlas/api/internal/ingest"
 )
 
 func main() {
@@ -30,8 +34,31 @@ func main() {
 	}
 	defer pool.Close()
 
-	srv := atlashttp.NewServer(pool, cfg.AdminToken)
+	if err := pool.Ping(ctx); err != nil {
+		log.Fatalf("db: ping: %v", err)
+	}
 
+	// River keeps its own tables; ensure they exist before starting workers.
+	if err := ingest.MigrateRiver(ctx, pool); err != nil {
+		log.Fatalf("%v", err)
+	}
+
+	queries := db.New(pool)
+	logger := slog.Default()
+
+	fetcher := ingest.NewGitHubFetcher(cfg.GithubToken)
+	pipeline := ingest.NewPipeline(fetcher, queries, logger)
+	worker := ingest.NewSyncWorker(queries, pipeline, logger)
+
+	riverClient, err := ingest.NewRiverClient(pool, worker)
+	if err != nil {
+		log.Fatalf("river: client: %v", err)
+	}
+	if err := riverClient.Start(ctx); err != nil {
+		log.Fatalf("river: start: %v", err)
+	}
+
+	srv := atlashttp.NewServer(pool, queries, riverClient, cfg.AdminToken)
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           srv.Router(),
@@ -50,9 +77,12 @@ func main() {
 	<-quit
 	log.Println("shutting down...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("shutdown: %v", err)
+		log.Printf("http shutdown: %v", err)
+	}
+	if err := riverClient.Stop(shutdownCtx); err != nil {
+		log.Printf("river stop: %v", err)
 	}
 }

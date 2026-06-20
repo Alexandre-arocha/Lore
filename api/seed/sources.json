@@ -1,5 +1,259 @@
 [
   {
+    "slug": "python",
+    "name": "Python",
+    "kind": "language",
+    "category": "backend",
+    "description": "Documentação oficial da linguagem Python, incluindo tutorial, referência, HOWTOs e biblioteca padrão.",
+    "logo_url": null,
+    "official_url": "https://docs.python.org/3/",
+    "license": "Python-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "python/cpython",
+      "branch": "main",
+      "docs_path": "Doc",
+      "include_globs": [
+        "tutorial/*.rst",
+        "tutorial/**/*.rst",
+        "reference/*.rst",
+        "reference/**/*.rst",
+        "library/*.rst",
+        "library/**/*.rst",
+        "howto/*.rst",
+        "howto/**/*.rst",
+        "using/*.rst",
+        "using/**/*.rst",
+        "installing/*.rst",
+        "installing/**/*.rst"
+      ],
+      "exclude_globs": ["whatsnew/**/*.rst"]
+    }
+  },
+  {
+    "slug": "javascript",
+    "name": "JavaScript",
+    "kind": "language",
+    "category": "frontend",
+    "description": "Guia e referência de JavaScript do MDN Web Docs, fonte prática mais usada para a linguagem na Web.",
+    "logo_url": null,
+    "official_url": "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
+    "license": "CC-BY-SA-2.5",
+    "version": null,
+    "ingest_config": {
+      "repo": "mdn/content",
+      "branch": "main",
+      "docs_path": "files/en-us/web/javascript",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "typescript",
+    "name": "TypeScript",
+    "kind": "language",
+    "category": "frontend",
+    "description": "Handbook e documentação oficial do TypeScript para tipagem estática no ecossistema JavaScript.",
+    "logo_url": null,
+    "official_url": "https://www.typescriptlang.org/docs/",
+    "license": "CC-BY-4.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "microsoft/TypeScript-Website",
+      "branch": "v2",
+      "docs_path": "packages/documentation/copy/en",
+      "include_globs": [
+        "get-started/**/*.md",
+        "handbook-v2/**/*.md",
+        "project-config/**/*.md",
+        "declaration-files/**/*.md",
+        "javascript/**/*.md",
+        "modules-reference/**/*.md"
+      ],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "java",
+    "name": "Java / OpenJDK",
+    "kind": "language",
+    "category": "backend",
+    "description": "Guia oficial do projeto OpenJDK, cobrindo o ecossistema Java e práticas do JDK.",
+    "logo_url": null,
+    "official_url": "https://openjdk.org/guide/",
+    "license": "GPL-2.0-with-classpath-exception",
+    "version": null,
+    "ingest_config": {
+      "repo": "openjdk/guide",
+      "branch": "master",
+      "docs_path": "src/guide",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "csharp",
+    "name": "C#",
+    "kind": "language",
+    "category": "backend",
+    "description": "Documentação oficial de C# no Microsoft Learn, com guias, conceitos e referência da linguagem.",
+    "logo_url": null,
+    "official_url": "https://learn.microsoft.com/en-us/dotnet/csharp/",
+    "license": "CC-BY-4.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "dotnet/docs",
+      "branch": "main",
+      "docs_path": "docs/csharp",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["whats-new/**/*.md"]
+    }
+  },
+  {
+    "slug": "cpp",
+    "name": "C e C++",
+    "kind": "language",
+    "category": "systems",
+    "description": "Documentação de C e C++ no Microsoft Learn, cobrindo referência e guias práticos para desenvolvimento moderno.",
+    "logo_url": null,
+    "official_url": "https://learn.microsoft.com/en-us/cpp/",
+    "license": "CC-BY-4.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "MicrosoftDocs/cpp-docs",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["c-language/**/*.md", "cpp/**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "go",
+    "name": "Go",
+    "kind": "language",
+    "category": "backend",
+    "description": "Documentação oficial da linguagem Go, incluindo tutoriais, artigos e guias publicados em go.dev.",
+    "logo_url": null,
+    "official_url": "https://go.dev/doc/",
+    "license": "BSD-3-Clause",
+    "version": null,
+    "ingest_config": {
+      "repo": "golang/website",
+      "branch": "master",
+      "docs_path": "_content/doc",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["devel/**/*.md"]
+    }
+  },
+  {
+    "slug": "rust",
+    "name": "Rust",
+    "kind": "language",
+    "category": "systems",
+    "description": "The Rust Programming Language, livro oficial para aprender Rust com propriedade, borrowing e concorrência segura.",
+    "logo_url": null,
+    "official_url": "https://doc.rust-lang.org/book/",
+    "license": "MIT OR Apache-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "rust-lang/book",
+      "branch": "main",
+      "docs_path": "src",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "php",
+    "name": "PHP",
+    "kind": "language",
+    "category": "backend",
+    "description": "Manual oficial da linguagem PHP, cobrindo sintaxe, tipos, fluxo de controle, funções e conceitos centrais.",
+    "logo_url": null,
+    "official_url": "https://www.php.net/manual/en/langref.php",
+    "license": "CC-BY-3.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "php/doc-en",
+      "branch": "master",
+      "docs_path": "language",
+      "include_globs": ["*.xml", "**/*.xml"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "ruby",
+    "name": "Ruby",
+    "kind": "language",
+    "category": "backend",
+    "description": "Documentação e guias oficiais do site ruby-lang.org para instalar, aprender e consultar Ruby.",
+    "logo_url": null,
+    "official_url": "https://www.ruby-lang.org/en/documentation/",
+    "license": "CC-BY-SA-2.5",
+    "version": null,
+    "ingest_config": {
+      "repo": "ruby/www.ruby-lang.org",
+      "branch": "master",
+      "docs_path": "en/documentation",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "kotlin",
+    "name": "Kotlin",
+    "kind": "language",
+    "category": "mobile",
+    "description": "Documentação oficial da linguagem Kotlin, incluindo sintaxe, tipos, coroutines, multiplatform e Android.",
+    "logo_url": null,
+    "official_url": "https://kotlinlang.org/docs/home.html",
+    "license": "Apache-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "JetBrains/kotlin-web-site",
+      "branch": "master",
+      "docs_path": "docs/topics",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["whatsnew*.md", "releases/**/*.md"]
+    }
+  },
+  {
+    "slug": "swift",
+    "name": "Swift",
+    "kind": "language",
+    "category": "mobile",
+    "description": "The Swift Programming Language, livro oficial da linguagem Swift mantido pelo projeto Swift.",
+    "logo_url": null,
+    "official_url": "https://docs.swift.org/swift-book/documentation/the-swift-programming-language/",
+    "license": "Apache-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "swiftlang/swift-book",
+      "branch": "main",
+      "docs_path": "TSPL.docc",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "dart",
+    "name": "Dart",
+    "kind": "language",
+    "category": "mobile",
+    "description": "Documentação oficial da linguagem Dart, base do ecossistema Flutter e aplicações multiplataforma.",
+    "logo_url": null,
+    "official_url": "https://dart.dev/language",
+    "license": "CC-BY-4.0 / BSD-3-Clause",
+    "version": null,
+    "ingest_config": {
+      "repo": "dart-lang/site-www",
+      "branch": "main",
+      "docs_path": "src/content/language",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
     "slug": "tailwind",
     "name": "Tailwind CSS",
     "kind": "framework",
@@ -46,9 +300,9 @@
     "license": "Apache-2.0",
     "version": null,
     "ingest_config": {
-      "repo": "prisma/docs",
+      "repo": "prisma/web",
       "branch": "main",
-      "docs_path": "content",
+      "docs_path": "apps/docs/content/docs",
       "include_globs": ["**/*.mdx", "**/*.md"],
       "exclude_globs": []
     }
