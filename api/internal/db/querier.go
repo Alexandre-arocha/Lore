@@ -20,7 +20,7 @@ type Querier interface {
 	GetSourceByID(ctx context.Context, id uuid.UUID) (Source, error)
 	GetSourceBySlug(ctx context.Context, slug string) (Source, error)
 	ListDocumentsBySource(ctx context.Context, sourceID uuid.UUID) ([]ListDocumentsBySourceRow, error)
-	ListSources(ctx context.Context, arg ListSourcesParams) ([]Source, error)
+	ListSources(ctx context.Context, arg ListSourcesParams) ([]ListSourcesRow, error)
 	ListSyncRunsBySource(ctx context.Context, arg ListSyncRunsBySourceParams) ([]SyncRun, error)
 	MarkSourceSynced(ctx context.Context, arg MarkSourceSyncedParams) error
 	// Removes documents of a source whose slug is no longer present in the latest sync.

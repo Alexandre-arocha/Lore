@@ -59,6 +59,7 @@ FROM documents d
 JOIN sources s ON s.id = d.source_id
 CROSS JOIN search
 WHERE search.tsq @@ d.search_vector
+  AND s.status = 'active'
   AND (sqlc.narg('source_slug')::text IS NULL OR s.slug = sqlc.narg('source_slug')::text)
 ORDER BY rank DESC, d.title
 LIMIT @limit_count::int;

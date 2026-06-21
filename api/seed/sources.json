@@ -306,5 +306,448 @@
       "include_globs": ["**/*.mdx", "**/*.md"],
       "exclude_globs": []
     }
+  },
+  {
+    "slug": "react",
+    "name": "React",
+    "kind": "library",
+    "category": "frontend",
+    "description": "Biblioteca para construir interfaces com componentes; documentação oficial do react.dev.",
+    "logo_url": null,
+    "official_url": "https://react.dev",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "reactjs/react.dev",
+      "branch": "main",
+      "docs_path": "src/content",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["blog/**", "community/**"]
+    }
+  },
+  {
+    "slug": "vue",
+    "name": "Vue.js",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework progressivo para interfaces, com reatividade e componentes single-file.",
+    "logo_url": null,
+    "official_url": "https://vuejs.org",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "vuejs/docs",
+      "branch": "main",
+      "docs_path": "src",
+      "include_globs": ["guide/**/*.md", "api/**/*.md", "tutorial/**/*.md", "style-guide/**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "svelte",
+    "name": "Svelte",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework que compila componentes para JavaScript otimizado, sem virtual DOM em runtime.",
+    "logo_url": null,
+    "official_url": "https://svelte.dev/docs",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "sveltejs/svelte",
+      "branch": "main",
+      "docs_path": "documentation/docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "sveltekit",
+    "name": "SvelteKit",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework de aplicação oficial do Svelte, com roteamento, SSR e build full-stack.",
+    "logo_url": null,
+    "official_url": "https://svelte.dev/docs/kit",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "sveltejs/kit",
+      "branch": "main",
+      "docs_path": "documentation/docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "angular",
+    "name": "Angular",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework completo do Google para aplicações web em TypeScript, com DI, roteamento e ferramentas.",
+    "logo_url": null,
+    "official_url": "https://angular.dev",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "angular/angular",
+      "branch": "main",
+      "docs_path": "adev/src/content",
+      "include_globs": ["guide/**/*.md", "tutorials/**/*.md", "reference/**/*.md", "tools/**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "nextjs",
+    "name": "Next.js",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework React para aplicações full-stack, com App Router, renderização no servidor e otimizações.",
+    "logo_url": null,
+    "official_url": "https://nextjs.org/docs",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "vercel/next.js",
+      "branch": "canary",
+      "docs_path": "docs",
+      "include_globs": ["**/*.mdx"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "nuxt",
+    "name": "Nuxt",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Framework Vue full-stack com roteamento, SSR, módulos e convenções para produtividade.",
+    "logo_url": null,
+    "official_url": "https://nuxt.com/docs",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "nuxt/nuxt",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "react-router",
+    "name": "React Router",
+    "kind": "framework",
+    "category": "frontend",
+    "description": "Roteamento full-stack para React; sucessor do Remix, com data loading e nested routing.",
+    "logo_url": null,
+    "official_url": "https://reactrouter.com",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "remix-run/react-router",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "express",
+    "name": "Express",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework web minimalista para Node.js, base de muitas APIs e aplicações JavaScript no servidor.",
+    "logo_url": null,
+    "official_url": "https://expressjs.com",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "expressjs/expressjs.com",
+      "branch": "main",
+      "docs_path": "src/content/docs/en",
+      "include_globs": ["**/*.md", "**/*.mdx"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "nestjs",
+    "name": "NestJS",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework Node.js progressivo em TypeScript, com arquitetura modular inspirada no Angular.",
+    "logo_url": null,
+    "official_url": "https://docs.nestjs.com",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "nestjs/docs.nestjs.com",
+      "branch": "master",
+      "docs_path": "content",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "fastify",
+    "name": "Fastify",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework web Node.js focado em performance e baixo overhead, com validação por schema.",
+    "logo_url": null,
+    "official_url": "https://fastify.dev/docs/latest/",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "fastify/fastify",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "fastapi",
+    "name": "FastAPI",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework Python moderno para APIs, com tipagem, validação automática e docs interativas.",
+    "logo_url": null,
+    "official_url": "https://fastapi.tiangolo.com",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "fastapi/fastapi",
+      "branch": "master",
+      "docs_path": "docs/en/docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["reference/**"]
+    }
+  },
+  {
+    "slug": "django",
+    "name": "Django",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework web Python batteries-included, com ORM, admin, autenticação e segurança.",
+    "logo_url": null,
+    "official_url": "https://docs.djangoproject.com",
+    "license": "BSD-3-Clause",
+    "version": null,
+    "ingest_config": {
+      "repo": "django/django",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.txt"],
+      "exclude_globs": ["releases/**", "_ext/**", "_theme/**", "man/**"]
+    }
+  },
+  {
+    "slug": "flask",
+    "name": "Flask",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Microframework web Python flexível, base leve para APIs e aplicações com extensões.",
+    "logo_url": null,
+    "official_url": "https://flask.palletsprojects.com",
+    "license": "BSD-3-Clause",
+    "version": null,
+    "ingest_config": {
+      "repo": "pallets/flask",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.rst"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "laravel",
+    "name": "Laravel",
+    "kind": "framework",
+    "category": "backend",
+    "description": "Framework PHP expressivo para aplicações web, com Eloquent ORM, roteamento e ecossistema rico.",
+    "logo_url": null,
+    "official_url": "https://laravel.com/docs",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "laravel/docs",
+      "branch": "11.x",
+      "docs_path": "",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": ["readme.md", "license.md", "contributions.md"]
+    }
+  },
+  {
+    "slug": "flutter",
+    "name": "Flutter",
+    "kind": "framework",
+    "category": "mobile",
+    "description": "Framework do Google para apps multiplataforma (mobile, web e desktop) a partir de um só código Dart.",
+    "logo_url": null,
+    "official_url": "https://docs.flutter.dev",
+    "license": "CC-BY-4.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "flutter/website",
+      "branch": "main",
+      "docs_path": "sites/docs/src/content",
+      "include_globs": ["**/*.md", "**/*.mdx"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "react-native",
+    "name": "React Native",
+    "kind": "framework",
+    "category": "mobile",
+    "description": "Framework para apps móveis nativos usando React; documentação oficial do reactnative.dev.",
+    "logo_url": null,
+    "official_url": "https://reactnative.dev",
+    "license": "MIT",
+    "version": null,
+    "ingest_config": {
+      "repo": "facebook/react-native-website",
+      "branch": "main",
+      "docs_path": "docs",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "html",
+    "name": "HTML",
+    "kind": "language",
+    "category": "frontend",
+    "description": "Documentacao do MDN Web Docs para HTML, cobrindo elementos, atributos, guias e referencia.",
+    "logo_url": null,
+    "official_url": "https://developer.mozilla.org/en-US/docs/Web/HTML",
+    "license": "CC-BY-SA-2.5",
+    "version": null,
+    "ingest_config": {
+      "repo": "mdn/content",
+      "branch": "main",
+      "docs_path": "files/en-us/web/html",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "css",
+    "name": "CSS",
+    "kind": "language",
+    "category": "frontend",
+    "description": "Documentacao do MDN Web Docs para CSS, com guias, propriedades, seletores, layout e referencia.",
+    "logo_url": null,
+    "official_url": "https://developer.mozilla.org/en-US/docs/Web/CSS",
+    "license": "CC-BY-SA-2.5",
+    "version": null,
+    "ingest_config": {
+      "repo": "mdn/content",
+      "branch": "main",
+      "docs_path": "files/en-us/web/css",
+      "include_globs": ["**/*.md"],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "sql",
+    "name": "SQL / PostgreSQL",
+    "kind": "language",
+    "category": "data",
+    "description": "Documentacao oficial do PostgreSQL para SQL, incluindo tutorial, sintaxe, tipos, funcoes e comandos.",
+    "logo_url": null,
+    "official_url": "https://www.postgresql.org/docs/current/sql.html",
+    "license": "PostgreSQL",
+    "version": null,
+    "ingest_config": {
+      "repo": "postgres/postgres",
+      "branch": "master",
+      "docs_path": "doc/src/sgml",
+      "include_globs": [
+        "tutorial.sgml",
+        "syntax.sgml",
+        "queries.sgml",
+        "ddl.sgml",
+        "dml.sgml",
+        "datatype.sgml",
+        "functions.sgml",
+        "func/*.sgml",
+        "ref/*.sgml"
+      ],
+      "exclude_globs": ["**/allfiles.sgml"]
+    }
+  },
+  {
+    "slug": "scala",
+    "name": "Scala",
+    "kind": "language",
+    "category": "backend",
+    "description": "Documentacao oficial de Scala, com Tour of Scala, Scala 3 Book e guias da linguagem.",
+    "logo_url": null,
+    "official_url": "https://docs.scala-lang.org",
+    "license": "CC-BY-SA-3.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "scala/docs.scala-lang",
+      "branch": "main",
+      "docs_path": "",
+      "include_globs": [
+        "_tour/**/*.md",
+        "_overviews/scala3-book/**/*.md",
+        "_overviews/core/**/*.md",
+        "_overviews/collections/**/*.md"
+      ],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "elixir",
+    "name": "Elixir",
+    "kind": "language",
+    "category": "backend",
+    "description": "Guias oficiais de Elixir para aprender a linguagem, tipos, pattern matching, processos e OTP.",
+    "logo_url": null,
+    "official_url": "https://elixir-lang.org/getting-started/introduction.html",
+    "license": "Apache-2.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "elixir-lang/elixir-lang.github.com",
+      "branch": "main",
+      "docs_path": "",
+      "include_globs": [
+        "getting-started/*.markdown",
+        "getting-started/**/*.markdown",
+        "crash-course.markdown",
+        "install.markdown",
+        "learning.markdown"
+      ],
+      "exclude_globs": []
+    }
+  },
+  {
+    "slug": "powershell",
+    "name": "PowerShell",
+    "kind": "language",
+    "category": "systems",
+    "description": "Documentacao oficial do PowerShell, incluindo especificacao da linguagem e guias de aprendizado.",
+    "logo_url": null,
+    "official_url": "https://learn.microsoft.com/en-us/powershell/",
+    "license": "CC-BY-4.0",
+    "version": null,
+    "ingest_config": {
+      "repo": "MicrosoftDocs/PowerShell-Docs",
+      "branch": "main",
+      "docs_path": "reference/docs-conceptual",
+      "include_globs": [
+        "overview.md",
+        "powershell-commands.md",
+        "what-is-a-command-shell.md",
+        "lang-spec/**/*.md",
+        "learn/ps101/**/*.md",
+        "learn/deep-dives/**/*.md",
+        "learn/shell/**/*.md"
+      ],
+      "exclude_globs": []
+    }
   }
 ]

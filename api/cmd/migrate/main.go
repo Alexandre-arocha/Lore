@@ -17,7 +17,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 
-	"github.com/lore/atlas/api/internal/config"
+	"lore/api/internal/config"
 )
 
 func main() {

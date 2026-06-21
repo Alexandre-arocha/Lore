@@ -3,6 +3,7 @@ package ingest
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,8 +31,9 @@ func NewRiverClient(pool *pgxpool.Pool, worker *SyncWorker) (*river.Client[pgx.T
 	river.AddWorker(workers, worker)
 
 	return river.NewClient(riverpgxv5.New(pool), &river.Config{
+		JobTimeout: 15 * time.Minute,
 		Queues: map[string]river.QueueConfig{
-			river.QueueDefault: {MaxWorkers: 2},
+			river.QueueDefault: {MaxWorkers: 4},
 		},
 		Workers: workers,
 	})

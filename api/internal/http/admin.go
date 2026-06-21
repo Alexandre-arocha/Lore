@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/lore/atlas/api/internal/db"
-	"github.com/lore/atlas/api/internal/ingest"
+	"lore/api/internal/db"
+	"lore/api/internal/ingest"
 )
 
 // requireAdmin gates the /api/admin routes behind a shared token. When no admin

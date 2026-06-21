@@ -71,10 +71,13 @@ func (q *Queries) GetSourceBySlug(ctx context.Context, slug string) (Source, err
 }
 
 const listSources = `-- name: ListSources :many
-SELECT id, slug, name, kind, category, description, logo_url, official_url, license, version, ingest_type, ingest_config, nav, status, last_synced_at, created_at, updated_at FROM sources
-WHERE ($1::source_kind IS NULL OR kind = $1::source_kind)
-  AND ($2::text IS NULL OR category = $2::text)
-ORDER BY category, name
+SELECT
+    s.id, s.slug, s.name, s.kind, s.category, s.description, s.logo_url, s.official_url, s.license, s.version, s.ingest_type, s.ingest_config, s.nav, s.status, s.last_synced_at, s.created_at, s.updated_at,
+    (SELECT count(*) FROM documents d WHERE d.source_id = s.id)::int AS doc_count
+FROM sources s
+WHERE ($1::source_kind IS NULL OR s.kind = $1::source_kind)
+  AND ($2::text IS NULL OR s.category = $2::text)
+ORDER BY s.category, s.name
 `
 
 type ListSourcesParams struct {
@@ -82,33 +85,39 @@ type ListSourcesParams struct {
 	Category *string     `json:"category"`
 }
 
-func (q *Queries) ListSources(ctx context.Context, arg ListSourcesParams) ([]Source, error) {
+type ListSourcesRow struct {
+	Source   Source `json:"source"`
+	DocCount int32  `json:"doc_count"`
+}
+
+func (q *Queries) ListSources(ctx context.Context, arg ListSourcesParams) ([]ListSourcesRow, error) {
 	rows, err := q.db.Query(ctx, listSources, arg.Kind, arg.Category)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Source{}
+	items := []ListSourcesRow{}
 	for rows.Next() {
-		var i Source
+		var i ListSourcesRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Slug,
-			&i.Name,
-			&i.Kind,
-			&i.Category,
-			&i.Description,
-			&i.LogoUrl,
-			&i.OfficialUrl,
-			&i.License,
-			&i.Version,
-			&i.IngestType,
-			&i.IngestConfig,
-			&i.Nav,
-			&i.Status,
-			&i.LastSyncedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.Source.ID,
+			&i.Source.Slug,
+			&i.Source.Name,
+			&i.Source.Kind,
+			&i.Source.Category,
+			&i.Source.Description,
+			&i.Source.LogoUrl,
+			&i.Source.OfficialUrl,
+			&i.Source.License,
+			&i.Source.Version,
+			&i.Source.IngestType,
+			&i.Source.IngestConfig,
+			&i.Source.Nav,
+			&i.Source.Status,
+			&i.Source.LastSyncedAt,
+			&i.Source.CreatedAt,
+			&i.Source.UpdatedAt,
+			&i.DocCount,
 		); err != nil {
 			return nil, err
 		}

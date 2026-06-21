@@ -1,4 +1,4 @@
-// Package http wires the Gin HTTP layer for the Atlas API.
+// Package http wires the Gin HTTP layer for the Lore API.
 package http
 
 import (
@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/riverqueue/river"
 
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/db"
 )
 
 // Server holds the dependencies shared by the HTTP handlers.

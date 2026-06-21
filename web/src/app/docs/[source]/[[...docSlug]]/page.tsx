@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { getDocument, getSource, type NavNode } from "@/lib/api";
+import {
+  getDocument,
+  getSource,
+  type DocumentPage,
+  type NavNode,
+} from "@/lib/api";
 
 type DocPageProps = {
   params: Promise<{
@@ -28,14 +33,14 @@ export default async function DocPage({ params }: DocPageProps) {
   }
 
   return (
-    <main className="min-h-svh bg-background">
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-6 sm:px-6 lg:grid-cols-[280px_1fr] lg:px-8">
-        <aside className="lg:sticky lg:top-6 lg:h-[calc(100svh-3rem)] lg:overflow-auto">
+    <main className="bg-background">
+      <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8 xl:grid-cols-[260px_minmax(0,1fr)_220px]">
+        <aside className="lg:sticky lg:top-20 lg:h-[calc(100svh-6rem)] lg:overflow-auto">
           <Link
             className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
             href="/"
           >
-            Voltar ao Atlas
+            ← Voltar
           </Link>
 
           <div className="mt-5 rounded-lg border p-4">
@@ -99,6 +104,16 @@ export default async function DocPage({ params }: DocPageProps) {
             />
 
             <footer className="mt-10 border-t pt-5 text-sm text-muted-foreground">
+              Conteúdo de{" "}
+              <a
+                className="font-medium text-foreground underline-offset-4 hover:underline"
+                href={doc.source.official_url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {doc.source.name}
+              </a>
+              {doc.source.license ? ` · Licença: ${doc.source.license}` : ""}.{" "}
               <a
                 className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
                 href={doc.source.official_url}
@@ -107,9 +122,6 @@ export default async function DocPage({ params }: DocPageProps) {
               >
                 Ver original <ExternalLink className="size-3.5" aria-hidden />
               </a>
-              {doc.source.license ? (
-                <span className="ml-3">Licença: {doc.source.license}</span>
-              ) : null}
             </footer>
           </article>
         ) : (
@@ -122,8 +134,60 @@ export default async function DocPage({ params }: DocPageProps) {
             </p>
           </section>
         )}
+
+        {doc ? <TocAside toc={doc.toc} /> : null}
       </div>
     </main>
+  );
+}
+
+function TocAside({ toc }: { toc: DocumentPage["toc"] }) {
+  if (!toc || toc.length === 0) {
+    return null;
+  }
+
+  return (
+    <aside className="hidden xl:block">
+      <div className="sticky top-20">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Nesta página
+        </p>
+        <nav className="border-l text-sm">
+          {toc.map((h) => (
+            <div key={h.anchor}>
+              <TocLink anchor={h.anchor} title={h.title} indent="pl-3" />
+              {h.children?.map((c) => (
+                <TocLink
+                  key={c.anchor}
+                  anchor={c.anchor}
+                  title={c.title}
+                  indent="pl-6"
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+      </div>
+    </aside>
+  );
+}
+
+function TocLink({
+  anchor,
+  title,
+  indent,
+}: {
+  anchor: string;
+  title: string;
+  indent: "pl-3" | "pl-6";
+}) {
+  return (
+    <a
+      href={`#${anchor}`}
+      className={`-ml-px block border-l-2 border-transparent py-1 ${indent} text-muted-foreground transition-colors hover:border-foreground hover:text-foreground`}
+    >
+      {title}
+    </a>
   );
 }
 

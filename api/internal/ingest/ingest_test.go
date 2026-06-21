@@ -140,6 +140,51 @@ func TestRender(t *testing.T) {
 	}
 }
 
+func TestSupportedDocExtension(t *testing.T) {
+	for _, ext := range []string{".md", ".markdown", ".mdx", ".rst", ".txt", ".xml", ".sgml"} {
+		if !supportedDocExtension(ext) {
+			t.Fatalf("supportedDocExtension(%q) = false, want true", ext)
+		}
+	}
+	if supportedDocExtension(".html") {
+		t.Fatal("supportedDocExtension(.html) = true, want false")
+	}
+}
+
+func TestProcessFileSupportsMarkdownAndSGML(t *testing.T) {
+	r := NewRenderer()
+
+	md, err := processFile(r, RawFile{
+		Path: "guide/intro.markdown",
+		Content: []byte(strings.Join([]string{
+			"---",
+			"title: Intro",
+			"---",
+			"",
+			"# Intro",
+			"",
+			"Hello.",
+		}, "\n")),
+	})
+	if err != nil {
+		t.Fatalf("process markdown: %v", err)
+	}
+	if md.Slug != "guide/intro" || md.Title != "Intro" {
+		t.Fatalf("markdown doc = slug %q title %q, want guide/intro Intro", md.Slug, md.Title)
+	}
+
+	sgml, err := processFile(r, RawFile{
+		Path:    "ref/select.sgml",
+		Content: []byte(`<refentry><refmeta><refentrytitle>SELECT</refentrytitle></refmeta><refsect1><title>Description</title><para>Read rows.</para><programlisting>SELECT * FROM users;</programlisting></refsect1></refentry>`),
+	})
+	if err != nil {
+		t.Fatalf("process sgml: %v", err)
+	}
+	if sgml.Title != "SELECT" || !strings.Contains(sgml.Text, "Read rows.") || !strings.Contains(sgml.HTML, "<pre") {
+		t.Fatalf("sgml doc not rendered as expected: title=%q text=%q html=%q", sgml.Title, sgml.Text, sgml.HTML)
+	}
+}
+
 func TestRSTToMarkdown(t *testing.T) {
 	src := strings.Join([]string{
 		"Python Tutorial",
@@ -167,6 +212,19 @@ func TestDocBookXMLToMarkdown(t *testing.T) {
 	for _, want := range []string{"## Basic syntax", "Hello echo.", "```", `<?php echo "hi"; ?>`} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("docBookXMLToMarkdown missing %q:\n%s", want, got)
+		}
+	}
+}
+
+func TestDocBookXMLTitle(t *testing.T) {
+	cases := map[string]string{
+		`<refentry><refmeta><refentrytitle>SELECT</refentrytitle></refmeta><refsect1><title>Description</title></refsect1></refentry>`: "SELECT",
+		`<refentry><refnamediv><refname>INSERT</refname></refnamediv></refentry>`:                                                      "INSERT",
+		`<chapter><title>Queries</title></chapter>`:                                                                                    "Queries",
+	}
+	for in, want := range cases {
+		if got := docBookXMLTitle(in); got != want {
+			t.Fatalf("docBookXMLTitle = %q, want %q", got, want)
 		}
 	}
 }

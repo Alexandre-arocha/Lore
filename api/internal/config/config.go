@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds all runtime configuration for the Atlas API.
+// Config holds all runtime configuration for the Lore API.
 type Config struct {
 	Port        string
 	Env         string

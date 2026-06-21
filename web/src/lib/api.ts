@@ -1,4 +1,4 @@
-// Cliente HTTP fino para a API do Atlas.
+// Cliente HTTP fino para a API do Lore.
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
 
@@ -23,6 +23,7 @@ export type Source = {
   license: string | null;
   version: string | null;
   status: string;
+  doc_count: number;
   nav?: NavNode[];
   last_synced_at: string | null;
 };

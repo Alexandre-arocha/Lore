@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/db"
 )
 
 const (
@@ -47,8 +47,8 @@ func (s *Server) handleListSources(c *gin.Context) {
 	}
 
 	items := make([]sourceResponse, 0, len(sources))
-	for _, source := range sources {
-		items = append(items, sourceSummary(source))
+	for _, row := range sources {
+		items = append(items, sourceSummary(row.Source, row.DocCount))
 	}
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }

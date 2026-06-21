@@ -5,10 +5,13 @@ SELECT * FROM sources WHERE slug = $1;
 SELECT * FROM sources WHERE id = $1;
 
 -- name: ListSources :many
-SELECT * FROM sources
-WHERE (sqlc.narg('kind')::source_kind IS NULL OR kind = sqlc.narg('kind')::source_kind)
-  AND (sqlc.narg('category')::text IS NULL OR category = sqlc.narg('category')::text)
-ORDER BY category, name;
+SELECT
+    sqlc.embed(s),
+    (SELECT count(*) FROM documents d WHERE d.source_id = s.id)::int AS doc_count
+FROM sources s
+WHERE (sqlc.narg('kind')::source_kind IS NULL OR s.kind = sqlc.narg('kind')::source_kind)
+  AND (sqlc.narg('category')::text IS NULL OR s.category = sqlc.narg('category')::text)
+ORDER BY s.category, s.name;
 
 -- name: UpsertSource :one
 INSERT INTO sources (

@@ -3,11 +3,12 @@ package ingest
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/riverqueue/river"
 
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/db"
 )
 
 // SyncSourceArgs are the args for the SyncSourceJob River job.
@@ -56,8 +57,10 @@ func (w *SyncWorker) Work(ctx context.Context, job *river.Job[SyncSourceArgs]) e
 	res, syncErr := w.pipeline.Sync(ctx, source)
 	if syncErr != nil {
 		msg := syncErr.Error()
-		_ = w.queries.SetSourceStatus(ctx, db.SetSourceStatusParams{ID: source.ID, Status: db.SourceStatusError})
-		_ = w.queries.FinishSyncRun(ctx, db.FinishSyncRunParams{
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		_ = w.queries.SetSourceStatus(cleanupCtx, db.SetSourceStatusParams{ID: source.ID, Status: db.SourceStatusError})
+		_ = w.queries.FinishSyncRun(cleanupCtx, db.FinishSyncRunParams{
 			ID:                 run.ID,
 			Status:             db.SyncStatusError,
 			DocumentsProcessed: int32(res.DocumentsProcessed),

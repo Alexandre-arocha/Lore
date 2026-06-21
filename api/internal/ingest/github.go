@@ -119,7 +119,7 @@ func (g *GitHubFetcher) Fetch(ctx context.Context, cfg Config) ([]RawFile, error
 
 func supportedDocExtension(ext string) bool {
 	switch strings.ToLower(ext) {
-	case ".md", ".mdx", ".rst", ".xml":
+	case ".md", ".markdown", ".mdx", ".rst", ".txt", ".xml", ".sgml":
 		return true
 	default:
 		return false

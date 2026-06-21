@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"log/slog"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
 
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/db"
 )
 
 // ProcessedDoc is a fully rendered page ready to be persisted.
@@ -31,10 +32,14 @@ type ProcessedDoc struct {
 func processFile(r *Renderer, f RawFile) (ProcessedDoc, error) {
 	fm, body := FrontMatter{}, f.Content
 	ext := strings.ToLower(path.Ext(f.Path))
-	if ext == ".rst" {
+	sourceTitle := ""
+	if ext == ".rst" || ext == ".txt" {
+		// Sphinx-style docs (e.g. Django) ship reStructuredText as .txt.
 		body = []byte(rstToMarkdown(string(body)))
-	} else if ext == ".xml" {
-		body = []byte(docBookXMLToMarkdown(string(body)))
+	} else if ext == ".xml" || ext == ".sgml" {
+		raw := string(body)
+		sourceTitle = docBookXMLTitle(raw)
+		body = []byte(docBookXMLToMarkdown(raw))
 	} else {
 		fm, body = splitFrontMatter(f.Content)
 	}
@@ -61,7 +66,7 @@ func processFile(r *Renderer, f RawFile) (ProcessedDoc, error) {
 	return ProcessedDoc{
 		Slug:      DeriveSlug(f.Path),
 		Path:      f.Path,
-		Title:     firstNonEmpty(fm.Title, rendered.H1, exportTitle, titleFromPath(f.Path)),
+		Title:     firstNonEmpty(fm.Title, sourceTitle, rendered.H1, exportTitle, firstTOCTitle(rendered.TOC), titleFromPath(f.Path)),
 		HTML:      rendered.HTML,
 		Text:      rendered.Text,
 		TOC:       rendered.TOC,
@@ -112,11 +117,17 @@ func (p *Pipeline) Sync(ctx context.Context, source db.Source) (Result, error) {
 		return Result{}, err
 	}
 
+	// Process in path order so books that encode order in their filenames
+	// (e.g. ch01-, ch02-) get a sensible default navigation order even when
+	// pages carry no explicit front-matter order.
+	sort.Slice(files, func(i, j int) bool { return files[i].Path < files[j].Path })
+
 	var (
 		res   Result
 		metas []DocMeta
 		kept  []string
 		seen  = map[string]string{}
+		seq   int
 	)
 
 	for _, f := range files {
@@ -133,6 +144,13 @@ func (p *Pipeline) Sync(ctx context.Context, source db.Source) (Result, error) {
 		}
 		seen[doc.Slug] = f.Path
 		res.Warnings += doc.Warnings
+
+		// Explicit front-matter order wins; otherwise fall back to path order.
+		seq++
+		position := doc.Position
+		if position == 0 {
+			position = seq
+		}
 
 		tocJSON := json.RawMessage("[]")
 		if len(doc.TOC) > 0 {
@@ -154,13 +172,13 @@ func (p *Pipeline) Sync(ctx context.Context, source db.Source) (Result, error) {
 			ContentHtml: doc.HTML,
 			ContentText: doc.Text,
 			Toc:         tocJSON,
-			Position:    int32(doc.Position),
+			Position:    int32(position),
 			WordCount:   int32(doc.WordCount),
 		}); err != nil {
 			return res, fmt.Errorf("upsert %s: %w", doc.Slug, err)
 		}
 
-		metas = append(metas, DocMeta{Slug: doc.Slug, Title: doc.Title, Position: doc.Position})
+		metas = append(metas, DocMeta{Slug: doc.Slug, Title: doc.Title, Position: position})
 		kept = append(kept, doc.Slug)
 		res.DocumentsProcessed++
 	}
@@ -187,4 +205,11 @@ func firstNonEmpty(vals ...string) string {
 		}
 	}
 	return ""
+}
+
+func firstTOCTitle(toc []TOCEntry) string {
+	if len(toc) == 0 {
+		return ""
+	}
+	return toc[0].Title
 }

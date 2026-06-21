@@ -8,15 +8,17 @@ import (
 )
 
 var (
-	xmlCommentRe = regexp.MustCompile(`(?s)<!--.*?-->`)
-	xmlDoctypeRe = regexp.MustCompile(`(?is)<!DOCTYPE.*?>`)
-	xmlProgramRe = regexp.MustCompile(`(?is)<(programlisting|screen|synopsis)[^>]*>(.*?)</(programlisting|screen|synopsis)>`)
-	xmlTitleRe   = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
-	xmlBreakRe   = regexp.MustCompile(`(?is)</(para|simpara|section|sect1|sect2|sect3|refsect1|refsect2|refentry|chapter)>`)
-	xmlTagRe     = regexp.MustCompile(`(?s)<[^>]+>`)
-	xmlEntityRe  = regexp.MustCompile(`&[A-Za-z0-9_.-]+;`)
-	xmlPunctRe   = regexp.MustCompile(`\s+([.,;:!?])`)
-	xmlBlankRe   = regexp.MustCompile(`\n{3,}`)
+	xmlCommentRe  = regexp.MustCompile(`(?s)<!--.*?-->`)
+	xmlDoctypeRe  = regexp.MustCompile(`(?is)<!DOCTYPE.*?>`)
+	xmlProgramRe  = regexp.MustCompile(`(?is)<(programlisting|screen|synopsis)[^>]*>(.*?)</(programlisting|screen|synopsis)>`)
+	xmlRefTitleRe = regexp.MustCompile(`(?is)<refentrytitle[^>]*>(.*?)</refentrytitle>`)
+	xmlRefNameRe  = regexp.MustCompile(`(?is)<refname[^>]*>(.*?)</refname>`)
+	xmlTitleRe    = regexp.MustCompile(`(?is)<title[^>]*>(.*?)</title>`)
+	xmlBreakRe    = regexp.MustCompile(`(?is)</(para|simpara|section|sect1|sect2|sect3|refsect1|refsect2|refentry|chapter)>`)
+	xmlTagRe      = regexp.MustCompile(`(?s)<[^>]+>`)
+	xmlEntityRe   = regexp.MustCompile(`&[A-Za-z0-9_.-]+;`)
+	xmlPunctRe    = regexp.MustCompile(`\s+([.,;:!?])`)
+	xmlBlankRe    = regexp.MustCompile(`\n{3,}`)
 )
 
 // docBookXMLToMarkdown is a small fallback for DocBook-like manuals such as the
@@ -30,7 +32,7 @@ func docBookXMLToMarkdown(src string) string {
 	s = xmlProgramRe.ReplaceAllStringFunc(s, func(match string) string {
 		inner := xmlTagRe.ReplaceAllString(match, "")
 		codeBlocks = append(codeBlocks, cleanXMLCode(inner))
-		return fmt.Sprintf("\n\n@@ATLAS_CODE_%d@@\n\n", len(codeBlocks)-1)
+		return fmt.Sprintf("\n\n@@LORE_CODE_%d@@\n\n", len(codeBlocks)-1)
 	})
 	s = xmlTitleRe.ReplaceAllStringFunc(s, func(match string) string {
 		inner := xmlTagRe.ReplaceAllString(match, "")
@@ -44,10 +46,24 @@ func docBookXMLToMarkdown(src string) string {
 	s = xmlTagRe.ReplaceAllString(s, " ")
 	s = cleanXMLText(s)
 	for i, code := range codeBlocks {
-		s = strings.ReplaceAll(s, fmt.Sprintf("@@ATLAS_CODE_%d@@", i), "\n\n```\n"+code+"\n```\n\n")
+		s = strings.ReplaceAll(s, fmt.Sprintf("@@LORE_CODE_%d@@", i), "\n\n```\n"+code+"\n```\n\n")
 	}
 	s = xmlBlankRe.ReplaceAllString(s, "\n\n")
 	return strings.TrimSpace(s) + "\n"
+}
+
+func docBookXMLTitle(src string) string {
+	for _, re := range []*regexp.Regexp{xmlRefTitleRe, xmlRefNameRe, xmlTitleRe} {
+		match := re.FindStringSubmatch(src)
+		if len(match) < 2 {
+			continue
+		}
+		title := strings.TrimSpace(cleanXMLText(xmlTagRe.ReplaceAllString(match[1], "")))
+		if title != "" {
+			return title
+		}
+	}
+	return ""
 }
 
 func cleanXMLText(s string) string {

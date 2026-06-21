@@ -168,6 +168,7 @@ FROM documents d
 JOIN sources s ON s.id = d.source_id
 CROSS JOIN search
 WHERE search.tsq @@ d.search_vector
+  AND s.status = 'active'
   AND ($1::text IS NULL OR s.slug = $1::text)
 ORDER BY rank DESC, d.title
 LIMIT $2::int

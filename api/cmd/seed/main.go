@@ -18,8 +18,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/lore/atlas/api/internal/config"
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/config"
+	"lore/api/internal/db"
 )
 
 type sourceSeed struct {

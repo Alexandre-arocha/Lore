@@ -1,4 +1,4 @@
-// Command server is the entrypoint for the Atlas HTTP API. It also runs the
+// Command server is the entrypoint for the Lore HTTP API. It also runs the
 // River worker that processes documentation ingestion jobs.
 package main
 
@@ -15,10 +15,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/lore/atlas/api/internal/config"
-	"github.com/lore/atlas/api/internal/db"
-	atlashttp "github.com/lore/atlas/api/internal/http"
-	"github.com/lore/atlas/api/internal/ingest"
+	"lore/api/internal/config"
+	"lore/api/internal/db"
+	lorehttp "lore/api/internal/http"
+	"lore/api/internal/ingest"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 		log.Fatalf("river: start: %v", err)
 	}
 
-	srv := atlashttp.NewServer(pool, queries, riverClient, cfg.AdminToken)
+	srv := lorehttp.NewServer(pool, queries, riverClient, cfg.AdminToken)
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
 		Handler:           srv.Router(),
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("atlas api listening on :%s (env=%s)", cfg.Port, cfg.Env)
+		log.Printf("lore api listening on :%s (env=%s)", cfg.Port, cfg.Env)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("http: %v", err)
 		}

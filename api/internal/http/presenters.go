@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/lore/atlas/api/internal/db"
+	"lore/api/internal/db"
 )
 
 // sourceResponse is the JSON shape returned for a source (detail view includes
@@ -20,12 +20,14 @@ type sourceResponse struct {
 	License      *string         `json:"license"`
 	Version      *string         `json:"version"`
 	Status       string          `json:"status"`
+	DocCount     int32           `json:"doc_count"`
 	Nav          json.RawMessage `json:"nav,omitempty"`
 	LastSyncedAt *time.Time      `json:"last_synced_at"`
 }
 
-func sourceSummary(s db.Source) sourceResponse {
+func sourceSummary(s db.Source, docCount int32) sourceResponse {
 	r := sourceDetail(s)
+	r.DocCount = docCount
 	r.Nav = nil
 	return r
 }

@@ -1,21 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
+import "./chroma.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+import { SiteHeader } from "@/components/site-header";
+import { ThemeProvider } from "@/components/theme-provider";
+
+const sans = IBM_Plex_Sans({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const mono = IBM_Plex_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Atlas — Documentação dev num só lugar",
+  title: "Lore — acervo de documentação",
   description:
-    "Hub que reúne a documentação de várias linguagens e frameworks com busca unificada, navegação rápida e leitura limpa.",
+    "Documentação de linguagens e frameworks em um índice só: busca unificada, navegação rápida e leitura limpa.",
 };
 
 export default function RootLayout({
@@ -26,9 +32,15 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${sans.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col bg-background text-foreground">
+        <ThemeProvider attribute="class" forcedTheme="dark" disableTransitionOnChange>
+          <SiteHeader />
+          <div className="flex-1">{children}</div>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -1,4 +1,4 @@
-module github.com/lore/atlas/api
+module lore/api
 
 go 1.25.0
 

@@ -1,20 +1,20 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: atlas-postgres
+    container_name: lore-postgres
     environment:
-      POSTGRES_USER: atlas
-      POSTGRES_PASSWORD: atlas
-      POSTGRES_DB: atlas
+      POSTGRES_USER: lore
+      POSTGRES_PASSWORD: lore
+      POSTGRES_DB: lore
     ports:
       - "5432:5432"
     volumes:
-      - atlas_pgdata:/var/lib/postgresql/data
+      - lore_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U atlas -d atlas"]
+      test: ["CMD-SHELL", "pg_isready -U lore -d lore"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  atlas_pgdata:
+  lore_pgdata:
