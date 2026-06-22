@@ -44,7 +44,52 @@
       "repo": "mdn/content",
       "branch": "main",
       "docs_path": "files/en-us/web/javascript",
-      "include_globs": ["**/*.md"],
+      "include_globs": [
+        "index.md",
+        "guide/*.md",
+        "guide/**/*.md",
+        "reference/index.md",
+        "reference/classes/*.md",
+        "reference/classes/**/*.md",
+        "reference/functions/*.md",
+        "reference/functions/**/*.md",
+        "reference/operators/*.md",
+        "reference/operators/**/*.md",
+        "reference/regular_expressions/*.md",
+        "reference/regular_expressions/**/*.md",
+        "reference/statements/*.md",
+        "reference/statements/**/*.md",
+        "reference/global_objects/array/*.md",
+        "reference/global_objects/array/**/*.md",
+        "reference/global_objects/bigint/*.md",
+        "reference/global_objects/bigint/**/*.md",
+        "reference/global_objects/boolean/*.md",
+        "reference/global_objects/boolean/**/*.md",
+        "reference/global_objects/date/*.md",
+        "reference/global_objects/date/**/*.md",
+        "reference/global_objects/function/*.md",
+        "reference/global_objects/function/**/*.md",
+        "reference/global_objects/json/*.md",
+        "reference/global_objects/json/**/*.md",
+        "reference/global_objects/map/*.md",
+        "reference/global_objects/map/**/*.md",
+        "reference/global_objects/math/*.md",
+        "reference/global_objects/math/**/*.md",
+        "reference/global_objects/number/*.md",
+        "reference/global_objects/number/**/*.md",
+        "reference/global_objects/object/*.md",
+        "reference/global_objects/object/**/*.md",
+        "reference/global_objects/promise/*.md",
+        "reference/global_objects/promise/**/*.md",
+        "reference/global_objects/regexp/*.md",
+        "reference/global_objects/regexp/**/*.md",
+        "reference/global_objects/set/*.md",
+        "reference/global_objects/set/**/*.md",
+        "reference/global_objects/string/*.md",
+        "reference/global_objects/string/**/*.md",
+        "reference/global_objects/symbol/*.md",
+        "reference/global_objects/symbol/**/*.md"
+      ],
       "exclude_globs": []
     }
   },
@@ -68,7 +113,11 @@
         "project-config/**/*.md",
         "declaration-files/**/*.md",
         "javascript/**/*.md",
-        "modules-reference/**/*.md"
+        "modules-reference/**/*.md",
+        "reference/*.md",
+        "reference/**/*.md",
+        "tutorials/*.md",
+        "tutorials/**/*.md"
       ],
       "exclude_globs": []
     }
@@ -105,8 +154,22 @@
       "repo": "dotnet/docs",
       "branch": "main",
       "docs_path": "docs/csharp",
-      "include_globs": ["**/*.md"],
-      "exclude_globs": ["whats-new/**/*.md"]
+      "include_globs": [
+        "tour-of-csharp/*.md",
+        "tour-of-csharp/**/*.md",
+        "fundamentals/*.md",
+        "fundamentals/**/*.md",
+        "language-reference/*.md",
+        "language-reference/**/*.md",
+        "programming-guide/*.md",
+        "programming-guide/**/*.md",
+        "linq/*.md",
+        "linq/**/*.md"
+      ],
+      "exclude_globs": [
+        "whats-new/**/*.md",
+        "**/snippets/**/*.md"
+      ]
     }
   },
   {
@@ -214,7 +277,12 @@
       "branch": "master",
       "docs_path": "docs/topics",
       "include_globs": ["**/*.md"],
-      "exclude_globs": ["whatsnew*.md", "releases/**/*.md"]
+      "exclude_globs": [
+        "whatsnew*.md",
+        "whatsnew/**/*.md",
+        "releases/**/*.md",
+        "compatibility-guides/**/*.md"
+      ]
     }
   },
   {

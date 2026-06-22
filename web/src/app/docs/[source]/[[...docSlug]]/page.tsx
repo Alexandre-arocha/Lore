@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import {
   getDocument,
   getSource,
@@ -33,110 +31,89 @@ export default async function DocPage({ params }: DocPageProps) {
   }
 
   return (
-    <main className="bg-background">
-      <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8 xl:grid-cols-[260px_minmax(0,1fr)_220px]">
-        <aside className="lg:sticky lg:top-20 lg:h-[calc(100svh-6rem)] lg:overflow-auto">
-          <Link
-            className="text-sm font-medium text-muted-foreground underline-offset-4 hover:underline"
-            href="/"
-          >
-            ← Voltar
-          </Link>
+    <main className="mx-auto grid w-full max-w-7xl grid-cols-1 px-5 sm:px-6 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-0 lg:px-0 xl:grid-cols-[248px_minmax(0,1fr)_240px]">
+      {/* left: source + index */}
+      <aside className="border-border py-6 lg:sticky lg:top-14 lg:h-[calc(100svh-3.5rem)] lg:overflow-auto lg:border-r lg:py-8 lg:pr-6 lg:pl-5">
+        <Link
+          href="/"
+          className="font-mono text-xs text-faint underline-offset-4 hover:text-gold"
+        >
+          ← acervo
+        </Link>
 
-          <div className="mt-5 rounded-lg border p-4">
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Badge variant="secondary">{source.kind}</Badge>
-              <Badge variant="outline">{source.category}</Badge>
-            </div>
-            <h1 className="text-xl font-semibold">{source.name}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {source.description}
+        <div className="mt-5">
+          <p className="label mb-1">{formatKind(source.kind)}</p>
+          <h1 className="text-lg font-semibold tracking-tight">{source.name}</h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {source.description}
+          </p>
+          <a
+            className="mt-3 inline-flex items-center gap-1 font-mono text-xs text-gold underline-offset-4 hover:underline"
+            href={source.official_url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            ver original ↗
+          </a>
+        </div>
+
+        <nav className="mt-6 border-t border-border pt-4">
+          <p className="label mb-3">índice</p>
+          {source.nav && source.nav.length > 0 ? (
+            <NavList nodes={source.nav} sourceSlug={source.slug} activeSlug={doc?.slug} />
+          ) : (
+            <p className="font-mono text-xs text-faint">sem documentos ainda.</p>
+          )}
+        </nav>
+      </aside>
+
+      {/* center: content */}
+      {doc ? (
+        <article className="min-w-0 py-8 lg:px-8">
+          <header className="border-b border-border pb-6">
+            <p className="label mb-3">
+              {source.slug} / {doc.slug}
             </p>
+            <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              {doc.title}
+            </h2>
+            <p className="mt-3 font-mono text-xs text-faint">
+              {doc.word_count} palavras
+              {doc.source.license ? ` · ${doc.source.license}` : ""}
+            </p>
+          </header>
+
+          <div
+            className="doc-content mt-8"
+            dangerouslySetInnerHTML={{ __html: doc.content_html }}
+          />
+
+          <footer className="mt-12 border-t border-border pt-5 font-mono text-xs text-muted-foreground">
+            conteúdo de{" "}
             <a
-              className="mt-4 inline-flex items-center gap-1 text-sm font-medium underline-offset-4 hover:underline"
-              href={source.official_url}
+              className="text-gold underline-offset-4 hover:underline"
+              href={doc.source.official_url}
               target="_blank"
               rel="noreferrer"
             >
-              Ver original <ExternalLink className="size-3.5" aria-hidden />
+              {doc.source.name} ↗
             </a>
-          </div>
+            {doc.source.license ? ` · licença ${doc.source.license}` : ""}
+          </footer>
+        </article>
+      ) : (
+        <section className="min-w-0 py-8 lg:px-8">
+          <p className="label mb-3">{source.slug}</p>
+          <h2 className="text-3xl font-semibold tracking-tight">{source.name}</h2>
+          <p className="mt-4 max-w-2xl text-muted-foreground">
+            Fonte cadastrada, mas ainda sem página inicial sincronizada. Escolha
+            uma entrada no índice ou rode a ingestão para popular os documentos.
+          </p>
+        </section>
+      )}
 
-          <nav className="mt-5 rounded-lg border p-3 text-sm">
-            <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Navegação
-            </p>
-            {source.nav && source.nav.length > 0 ? (
-              <NavList
-                nodes={source.nav}
-                sourceSlug={source.slug}
-                activeSlug={doc?.slug}
-              />
-            ) : (
-              <p className="px-2 py-3 text-muted-foreground">
-                Nenhum documento sincronizado ainda.
-              </p>
-            )}
-          </nav>
-        </aside>
-
-        {doc ? (
-          <article className="min-w-0">
-            <header className="border-b pb-5">
-              <div className="mb-3 flex flex-wrap gap-2">
-                {doc.source.license ? (
-                  <Badge variant="outline">Licença: {doc.source.license}</Badge>
-                ) : null}
-                <Badge variant="outline">{doc.word_count} palavras</Badge>
-              </div>
-              <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
-                {doc.title}
-              </h2>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Fonte: {doc.source.name}. Atribuição preservada com link para a
-                documentação oficial.
-              </p>
-            </header>
-
-            <div
-              className="doc-content mt-8"
-              dangerouslySetInnerHTML={{ __html: doc.content_html }}
-            />
-
-            <footer className="mt-10 border-t pt-5 text-sm text-muted-foreground">
-              Conteúdo de{" "}
-              <a
-                className="font-medium text-foreground underline-offset-4 hover:underline"
-                href={doc.source.official_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {doc.source.name}
-              </a>
-              {doc.source.license ? ` · Licença: ${doc.source.license}` : ""}.{" "}
-              <a
-                className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline"
-                href={doc.source.official_url}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Ver original <ExternalLink className="size-3.5" aria-hidden />
-              </a>
-            </footer>
-          </article>
-        ) : (
-          <section className="rounded-lg border border-dashed p-8">
-            <h2 className="text-2xl font-semibold">{source.name}</h2>
-            <p className="mt-3 max-w-2xl text-muted-foreground">
-              A fonte está cadastrada, mas ainda não há página inicial
-              sincronizada para abrir. Use o endpoint admin de sync para popular
-              os documentos e a navegação.
-            </p>
-          </section>
-        )}
-
-        {doc ? <TocAside toc={doc.toc} /> : null}
-      </div>
+      {/* right: on this page */}
+      {doc ? <TocAside toc={doc.toc} /> : null}
     </main>
   );
 }
@@ -147,22 +124,15 @@ function TocAside({ toc }: { toc: DocumentPage["toc"] }) {
   }
 
   return (
-    <aside className="hidden xl:block">
-      <div className="sticky top-20">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Nesta página
-        </p>
-        <nav className="border-l text-sm">
+    <aside className="hidden py-8 xl:block xl:border-l xl:border-border xl:pl-6">
+      <div className="sticky top-[4.5rem]">
+        <p className="label mb-3">nesta página</p>
+        <nav className="border-l border-border">
           {toc.map((h) => (
             <div key={h.anchor}>
               <TocLink anchor={h.anchor} title={h.title} indent="pl-3" />
               {h.children?.map((c) => (
-                <TocLink
-                  key={c.anchor}
-                  anchor={c.anchor}
-                  title={c.title}
-                  indent="pl-6"
-                />
+                <TocLink key={c.anchor} anchor={c.anchor} title={c.title} indent="pl-6" />
               ))}
             </div>
           ))}
@@ -184,7 +154,7 @@ function TocLink({
   return (
     <a
       href={`#${anchor}`}
-      className={`-ml-px block border-l-2 border-transparent py-1 ${indent} text-muted-foreground transition-colors hover:border-foreground hover:text-foreground`}
+      className={`-ml-px block border-l-2 border-transparent py-1 font-mono text-xs ${indent} text-muted-foreground transition-colors hover:border-l-gold hover:text-gold`}
     >
       {title}
     </a>
@@ -201,34 +171,45 @@ function NavList({
   activeSlug?: string;
 }) {
   return (
-    <ul className="space-y-1">
-      {nodes.map((node) => (
-        <li key={`${node.slug ?? node.title}`}>
-          {node.slug ? (
-            <Link
-              className={`block rounded-md px-2 py-1.5 underline-offset-4 hover:bg-muted ${
-                node.slug === activeSlug ? "bg-muted font-medium" : ""
-              }`}
-              href={`/docs/${sourceSlug}/${node.slug}`}
-            >
-              {node.title}
-            </Link>
-          ) : (
-            <span className="block px-2 py-1.5 font-medium text-muted-foreground">
-              {node.title}
-            </span>
-          )}
-          {node.children && node.children.length > 0 ? (
-            <div className="ml-3 border-l pl-2">
-              <NavList
-                nodes={node.children}
-                sourceSlug={sourceSlug}
-                activeSlug={activeSlug}
-              />
-            </div>
-          ) : null}
-        </li>
-      ))}
+    <ul className="space-y-0.5">
+      {nodes.map((node) => {
+        const active = node.slug === activeSlug;
+        return (
+          <li key={`${node.slug ?? node.title}`}>
+            {node.slug ? (
+              <Link
+                className={`-ml-px block border-l-2 py-1 pl-3 font-mono text-xs transition-colors ${
+                  active
+                    ? "border-l-gold text-gold"
+                    : "border-transparent text-muted-foreground hover:border-l-line-strong hover:text-foreground"
+                }`}
+                href={`/docs/${sourceSlug}/${node.slug}`}
+              >
+                {node.title}
+              </Link>
+            ) : (
+              <span className="mt-3 block py-1 font-mono text-[0.7rem] uppercase tracking-[0.14em] text-faint">
+                {node.title}
+              </span>
+            )}
+            {node.children && node.children.length > 0 ? (
+              <div className="ml-3 border-l border-border pl-1">
+                <NavList nodes={node.children} sourceSlug={sourceSlug} activeSlug={activeSlug} />
+              </div>
+            ) : null}
+          </li>
+        );
+      })}
     </ul>
   );
+}
+
+function formatKind(value: string) {
+  const labels: Record<string, string> = {
+    framework: "framework",
+    language: "linguagem",
+    library: "biblioteca",
+    tool: "ferramenta",
+  };
+  return labels[value] ?? value;
 }

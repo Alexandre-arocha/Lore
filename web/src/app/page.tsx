@@ -1,22 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  Activity,
-  BookOpen,
-  Database,
-  ExternalLink,
-  Search,
-} from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  getHealth,
-  getSources,
-  searchDocuments,
-  type Source,
-} from "@/lib/api";
+import { getSources, searchDocuments, type Source } from "@/lib/api";
 
 type HomeProps = {
   searchParams: Promise<{
@@ -26,179 +11,185 @@ type HomeProps = {
   }>;
 };
 
+const CATEGORY_ORDER = ["frontend", "backend", "mobile", "systems"];
+
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const q = firstParam(params.q).trim();
   const selectedKind = firstParam(params.tipo);
   const selectedCategory = firstParam(params.area);
-  const [health, sources, results] = await Promise.all([
-    getHealth(),
+
+  const [sources, results] = await Promise.all([
     getSources(),
     searchDocuments(q),
   ]);
 
-  const readySources = sources.filter(isReadySource);
-  const pendingSources = sources.filter((source) => !isReadySource(source));
-  const filteredSources = readySources.filter(
-    (source) =>
-      (!selectedKind || source.kind === selectedKind) &&
-      (!selectedCategory || source.category === selectedCategory),
+  const ready = sources.filter(isReadySource);
+  const pending = sources.filter((s) => !isReadySource(s));
+  const filtered = ready.filter(
+    (s) =>
+      (!selectedKind || s.kind === selectedKind) &&
+      (!selectedCategory || s.category === selectedCategory),
   );
-  const totalDocs = readySources.reduce((sum, source) => sum + source.doc_count, 0);
-  const online = health?.status === "ok";
 
   return (
-    <main className="min-h-svh bg-background">
-      <section className="border-b border-border">
-        <div className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-10 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-          <div className="space-y-8">
-            <div className="max-w-3xl space-y-4">
-              <div className="flex items-center gap-2">
-                <BookOpen className="size-5 text-gold" aria-hidden />
-                <span className="label">acervo publico de documentacao</span>
-              </div>
-              <div className="space-y-3">
-                <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-                  Lore
-                </h1>
-                <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                  Documentacao tecnica em um indice so: linguagens, frameworks e
-                  bibliotecas com busca unificada, navegacao rapida e leitura
-                  sem distracao.
-                </p>
-              </div>
-            </div>
+    <main className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
+      {/* hero */}
+      <section className="border-b border-border py-12 sm:py-16">
+        <p className="label mb-3">// acervo</p>
+        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
+          Documentação de linguagens e frameworks
+        </h1>
+        <p className="mt-4 max-w-2xl leading-7 text-muted-foreground">
+          Um índice só, leitura limpa e busca unificada. O conteúdo fica no
+          idioma original; a curadoria é em PT-BR.
+        </p>
 
-            <form action="/" className="flex w-full max-w-3xl gap-2">
-              <div className="relative flex-1">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-faint"
-                  aria-hidden
-                />
-                <Input
-                  className="h-11 border-border bg-surface-2/40 pl-9 font-mono"
-                  name="q"
-                  placeholder="buscar em docs sincronizadas"
-                  defaultValue={q}
-                />
-              </div>
-              <Button className="h-11 px-5" type="submit">
-                Buscar
-              </Button>
-            </form>
-          </div>
-
-          <div className="grid grid-cols-2 border border-border bg-surface-2/20 sm:grid-cols-4 lg:grid-cols-2">
-            <Metric label="fontes prontas" value={readySources.length} />
-            <Metric label="paginas" value={totalDocs.toLocaleString("pt-BR")} />
-            <Metric label="areas" value={unique(readySources.map((s) => s.category)).length} />
-            <Metric
-              label="api"
-              value={online ? "ok" : "off"}
-              tone={online ? "good" : "bad"}
-            />
-          </div>
-        </div>
+        <form
+          action="/"
+          className="mt-8 flex max-w-2xl border border-border bg-card focus-within:border-line-strong"
+        >
+          <span className="flex items-center pl-3 font-mono text-gold" aria-hidden>
+            {">"}
+          </span>
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="buscar em todas as fontes…"
+            aria-label="Buscar na documentação"
+            className="h-11 w-full bg-transparent px-3 font-mono text-sm outline-none placeholder:text-faint"
+          />
+          <button
+            type="submit"
+            className="border-l border-border bg-surface-2 px-4 font-mono text-xs uppercase tracking-wider transition-colors hover:bg-primary hover:text-primary-foreground"
+          >
+            buscar
+          </button>
+        </form>
       </section>
 
-      <section className="mx-auto grid w-full max-w-7xl gap-8 px-5 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:px-8">
-        <div className="space-y-6">
-          {q ? (
-            <>
-              <SectionHeading
-                title={`Resultados para "${q}"`}
-                detail={`${results.length} encontrados`}
-              />
-              <SearchResults results={results} />
-            </>
-          ) : (
-            <>
-              <SectionHeading
-                title="Fontes sincronizadas"
-                detail={`${filteredSources.length} de ${readySources.length} prontas`}
-              />
-              <FilterBar
-                sources={readySources}
-                selectedKind={selectedKind}
-                selectedCategory={selectedCategory}
-              />
-              <SourceGrid sources={filteredSources} />
-            </>
-          )}
+      {q ? (
+        <SearchResults q={q} results={results} />
+      ) : (
+        <div className="py-10">
+          <FilterBar
+            sources={ready}
+            selectedKind={selectedKind}
+            selectedCategory={selectedCategory}
+          />
+          <Catalog sources={filtered} />
+          <PendingNote sources={pending} />
         </div>
-
-        <aside className="space-y-4">
-          <div className="border border-border p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <Database className="size-4 text-gold" aria-hidden />
-              <h2 className="font-semibold">Estado do acervo</h2>
-            </div>
-            <div className="space-y-3 text-sm leading-6 text-muted-foreground">
-              <p>
-                A busca usa Postgres FTS nativo e ignora fontes que ainda nao
-                estao ativas, evitando resultados parciais ou instaveis.
-              </p>
-              <p>
-                Cada pagina mostra atribuicao, licenca e link para a fonte
-                oficial.
-              </p>
-            </div>
-          </div>
-
-          <PendingSources sources={pendingSources} />
-
-          <div className="border border-border p-4">
-            <h2 className="mb-3 font-semibold">Atalhos de API</h2>
-            <div className="grid gap-2 text-sm">
-              <ApiLink href="http://localhost:8080/api/sources">
-                /api/sources
-              </ApiLink>
-              <ApiLink href="http://localhost:8080/api/search?q=function">
-                /api/search?q=function
-              </ApiLink>
-              <ApiLink href="http://localhost:8080/api/health">
-                /api/health
-              </ApiLink>
-            </div>
-          </div>
-        </aside>
-      </section>
+      )}
     </main>
   );
 }
 
-function Metric({
-  label,
-  value,
-  tone = "neutral",
-}: {
-  label: string;
-  value: ReactNode;
-  tone?: "neutral" | "good" | "bad";
-}) {
-  return (
-    <div className="border-b border-r border-border p-4 last:border-r-0 sm:last:border-r lg:[&:nth-child(even)]:border-r-0">
-      <p className="label">{label}</p>
-      <p
-        className={`mt-2 font-mono text-2xl font-medium ${
-          tone === "good"
-            ? "text-gold"
-            : tone === "bad"
-              ? "text-destructive"
-              : "text-foreground"
-        }`}
-      >
-        {value}
+function Catalog({ sources }: { sources: Source[] }) {
+  if (sources.length === 0) {
+    return (
+      <p className="border border-dashed border-border p-8 font-mono text-sm text-faint">
+        nenhuma fonte pronta para esses filtros.
       </p>
+    );
+  }
+
+  return (
+    <div className="space-y-12">
+      {groupByCategory(sources).map(([category, items]) => (
+        <section key={category}>
+          <div className="mb-4 flex items-baseline gap-4">
+            <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+              {formatCategory(category)}
+            </h2>
+            <span className="h-px flex-1 bg-border" aria-hidden />
+            <span className="font-mono text-xs text-faint">
+              {items.length} {items.length === 1 ? "fonte" : "fontes"}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-px border border-border bg-border sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {items.map((source) => (
+              <SourceTile key={source.slug} source={source} />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }
 
-function SectionHeading({ title, detail }: { title: string; detail: string }) {
+function SourceTile({ source }: { source: Source }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
-      <h2 className="text-xl font-semibold">{title}</h2>
-      <span className="font-mono text-xs text-faint">{detail}</span>
+    <Link
+      href={`/docs/${source.slug}`}
+      className="group flex min-h-[8.5rem] flex-col gap-2 border-l-2 border-transparent bg-background p-4 transition-colors hover:border-l-gold hover:bg-surface-2"
+    >
+      <span className="font-mono text-xs text-faint group-hover:text-gold">
+        {source.slug}
+      </span>
+      <span className="text-base font-semibold tracking-tight">
+        {source.name}
+      </span>
+      <span className="line-clamp-2 text-sm text-muted-foreground">
+        {source.description}
+      </span>
+      <span className="mt-auto font-mono text-xs text-faint">
+        {formatKind(source.kind)} · {source.doc_count}{" "}
+        {source.doc_count === 1 ? "doc" : "docs"}
+      </span>
+    </Link>
+  );
+}
+
+function SearchResults({
+  q,
+  results,
+}: {
+  q: string;
+  results: Awaited<ReturnType<typeof searchDocuments>>;
+}) {
+  return (
+    <div className="py-10">
+      <div className="mb-4 flex items-baseline gap-4">
+        <h2 className="font-mono text-xs uppercase tracking-[0.14em] text-muted-foreground">
+          resultados
+        </h2>
+        <span className="h-px flex-1 bg-border" aria-hidden />
+        <span className="font-mono text-xs text-faint">
+          {results.length} para “{q}”
+        </span>
+      </div>
+
+      {results.length === 0 ? (
+        <p className="border border-dashed border-border p-8 font-mono text-sm text-faint">
+          nenhum resultado nas fontes ativas.
+        </p>
+      ) : (
+        <ul className="border border-border">
+          {results.map((r) => (
+            <li
+              key={`${r.source.slug}/${r.slug}`}
+              className="border-b border-border last:border-b-0"
+            >
+              <Link
+                href={r.document_url}
+                className="block border-l-2 border-transparent p-4 transition-colors hover:border-l-gold hover:bg-surface-2"
+              >
+                <div className="mb-1 flex items-center gap-2 font-mono text-xs text-faint">
+                  <span className="text-muted-foreground">{r.source.name}</span>
+                  <span aria-hidden>/</span>
+                  <span>{r.slug}</span>
+                </div>
+                <p className="font-semibold">{r.title}</p>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                  {highlightExcerpt(r.excerpt)}
+                </p>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -212,11 +203,11 @@ function FilterBar({
   selectedKind: string;
   selectedCategory: string;
 }) {
-  const kinds = unique(sources.map((source) => source.kind));
-  const categories = unique(sources.map((source) => source.category));
+  const kinds = unique(sources.map((s) => s.kind));
+  const categories = unique(sources.map((s) => s.category));
 
   return (
-    <div className="space-y-3 border border-border bg-surface-2/20 p-3">
+    <div className="mb-8 space-y-3 border border-border bg-surface-2/20 p-3">
       <FilterGroup
         label="tipo"
         param="tipo"
@@ -226,7 +217,7 @@ function FilterBar({
         formatter={formatKind}
       />
       <FilterGroup
-        label="area"
+        label="área"
         param="area"
         options={categories}
         selected={selectedCategory}
@@ -254,11 +245,8 @@ function FilterGroup({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="label mr-1">{label}</span>
-      <FilterLink
-        href={filterHref(param, "", preserve)}
-        active={!selected}
-      >
+      <span className="label mr-1 w-10">{label}</span>
+      <FilterLink href={filterHref(param, "", preserve)} active={!selected}>
         todos
       </FilterLink>
       {options.map((option) => (
@@ -297,136 +285,14 @@ function FilterLink({
   );
 }
 
-function SourceGrid({ sources }: { sources: Source[] }) {
-  if (sources.length === 0) {
-    return (
-      <div className="border border-dashed border-border p-8 text-sm text-muted-foreground">
-        Nenhuma fonte pronta para esses filtros.
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-3 md:grid-cols-2">
-      {sources.map((source) => (
-        <article
-          key={source.slug}
-          className="border border-border bg-card p-4 transition-colors hover:border-line-strong"
-        >
-          <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{formatKind(source.kind)}</Badge>
-            <Badge variant="outline">{formatCategory(source.category)}</Badge>
-            <Badge variant="outline">{source.doc_count} paginas</Badge>
-          </div>
-          <h3 className="text-lg font-semibold">{source.name}</h3>
-          <p className="mt-2 min-h-12 text-sm leading-6 text-muted-foreground">
-            {source.description}
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-            <Link
-              className="font-medium text-gold underline-offset-4 hover:underline"
-              href={`/docs/${source.slug}`}
-            >
-              Abrir leitor
-            </Link>
-            <a
-              className="inline-flex items-center gap-1 text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              href={source.official_url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Original <ExternalLink className="size-3.5" aria-hidden />
-            </a>
-          </div>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function SearchResults({
-  results,
-}: {
-  results: Awaited<ReturnType<typeof searchDocuments>>;
-}) {
-  if (results.length === 0) {
-    return (
-      <div className="border border-dashed border-border p-8 text-sm text-muted-foreground">
-        Nenhum resultado encontrado nas fontes ativas.
-      </div>
-    );
-  }
-
-  return (
-    <div className="divide-y divide-border border border-border">
-      {results.map((result) => (
-        <article key={`${result.source.slug}/${result.slug}`} className="p-4">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{result.source.name}</Badge>
-            {result.source.license ? (
-              <Badge variant="outline">{result.source.license}</Badge>
-            ) : null}
-          </div>
-          <h3 className="text-lg font-semibold">{result.title}</h3>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {highlightExcerpt(result.excerpt)}
-          </p>
-          <p className="mt-3 font-mono text-xs text-faint">
-            <Link
-              className="underline-offset-4 hover:text-gold hover:underline"
-              href={`/docs/${result.source.slug}/${result.slug}`}
-            >
-              {result.source.slug}/{result.slug}
-            </Link>
-          </p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function PendingSources({ sources }: { sources: Source[] }) {
+function PendingNote({ sources }: { sources: Source[] }) {
   if (sources.length === 0) {
     return null;
   }
-
   return (
-    <div className="border border-border p-4">
-      <div className="mb-3 flex items-center gap-2">
-        <Activity className="size-4 text-gold" aria-hidden />
-        <h2 className="font-semibold">Pendentes</h2>
-      </div>
-      <div className="space-y-3">
-        {sources.map((source) => (
-          <div key={source.slug} className="border-l border-border pl-3">
-            <p className="text-sm font-medium">{source.name}</p>
-            <p className="font-mono text-xs text-faint">
-              {source.status} · {source.doc_count} paginas
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function ApiLink({
-  href,
-  children,
-}: {
-  href: string;
-  children: ReactNode;
-}) {
-  return (
-    <a
-      className="inline-flex items-center justify-between gap-3 border border-border px-3 py-2 font-mono text-xs text-muted-foreground underline-offset-4 hover:border-line-strong hover:text-foreground hover:underline"
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-    >
-      {children}
-      <ExternalLink className="size-3.5" aria-hidden />
-    </a>
+    <p className="mt-12 border-t border-border pt-4 font-mono text-xs text-faint">
+      pendentes ({sources.length}): {sources.map((s) => s.slug).join(" · ")}
+    </p>
   );
 }
 
@@ -436,7 +302,6 @@ function highlightExcerpt(excerpt: string) {
       if (part === "<mark>" || part === "</mark>") {
         return parts;
       }
-
       const highlighted = all[index - 1] === "<mark>";
       parts.push(
         highlighted ? (
@@ -457,6 +322,23 @@ function isReadySource(source: Source) {
   return source.status === "active" && source.doc_count > 0;
 }
 
+function groupByCategory(sources: Source[]): [string, Source[]][] {
+  const map = new Map<string, Source[]>();
+  for (const s of sources) {
+    const arr = map.get(s.category) ?? [];
+    arr.push(s);
+    map.set(s.category, arr);
+  }
+  return Array.from(map.entries()).sort((a, b) => {
+    const ra = CATEGORY_ORDER.indexOf(a[0]);
+    const rb = CATEGORY_ORDER.indexOf(b[0]);
+    return (
+      (ra === -1 ? 99 : ra) - (rb === -1 ? 99 : rb) ||
+      a[0].localeCompare(b[0])
+    );
+  });
+}
+
 function filterHref(
   param: "tipo" | "area",
   value: string,
@@ -470,8 +352,6 @@ function filterHref(
   }
   if (value) {
     params.set(param, value);
-  } else {
-    params.delete(param);
   }
   const qs = params.toString();
   return qs ? `/?${qs}` : "/";
@@ -498,9 +378,7 @@ function formatCategory(value: string) {
 }
 
 function unique(values: string[]) {
-  return Array.from(new Set(values)).sort((a, b) =>
-    formatCategory(a).localeCompare(formatCategory(b), "pt-BR"),
-  );
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }
 
 function firstParam(value: string | string[] | undefined): string {
