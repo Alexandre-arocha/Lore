@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -52,6 +53,10 @@ func (s *Server) handleUpsertSource(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
 		return
 	}
+	if err := validateUpsertSourceRequest(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	if req.Slug == "" || req.Name == "" || req.OfficialURL == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "slug, name e official_url são obrigatórios"})
 		return
@@ -92,6 +97,54 @@ func (s *Server) handleUpsertSource(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, sourceDetail(source))
+}
+
+func validateUpsertSourceRequest(req upsertSourceRequest) error {
+	slug := strings.TrimSpace(req.Slug)
+	if slug == "" || strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.OfficialURL) == "" {
+		return errors.New("slug, name e official_url sao obrigatorios")
+	}
+	if slug != req.Slug {
+		return errors.New("slug deve vir sem espacos nas pontas")
+	}
+	if !validKinds[req.Kind] {
+		return errors.New("kind invalido (language|framework|library|tool)")
+	}
+	if strings.TrimSpace(req.Category) == "" {
+		return errors.New("category e obrigatoria")
+	}
+	if req.License == nil || strings.TrimSpace(*req.License) == "" {
+		return errors.New("license e obrigatoria")
+	}
+	if len(req.IngestConfig) == 0 {
+		return errors.New("ingest_config e obrigatorio")
+	}
+
+	var rawCfg ingest.Config
+	if err := json.Unmarshal(req.IngestConfig, &rawCfg); err != nil {
+		return errors.New("ingest_config invalido: " + err.Error())
+	}
+	if len(rawCfg.IncludeGlobs) == 0 {
+		return errors.New("ingest_config.include_globs e obrigatorio")
+	}
+
+	cfg, err := ingest.ParseConfig(req.IngestConfig)
+	if err != nil {
+		return err
+	}
+	if strings.Count(cfg.Repo, "/") != 1 {
+		return errors.New("ingest_config.repo deve estar no formato owner/name")
+	}
+	for _, glob := range append(cfg.IncludeGlobs, cfg.ExcludeGlobs...) {
+		if strings.TrimSpace(glob) == "" {
+			return errors.New("globs vazios nao sao permitidos")
+		}
+		if strings.HasPrefix(glob, "/") || strings.Contains(glob, "\\") {
+			return errors.New("globs devem ser relativos e usar barras /")
+		}
+	}
+
+	return nil
 }
 
 func (s *Server) handleSyncSource(c *gin.Context) {

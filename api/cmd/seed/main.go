@@ -14,12 +14,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"lore/api/internal/config"
 	"lore/api/internal/db"
+	"lore/api/internal/ingest"
 )
 
 type sourceSeed struct {
@@ -57,6 +59,9 @@ func main() {
 	if err := json.Unmarshal(raw, &seeds); err != nil {
 		log.Fatalf("seed: parse %s: %v", path, err)
 	}
+	if err := validateSeeds(seeds); err != nil {
+		log.Fatalf("seed: validate %s: %v", path, err)
+	}
 
 	ctx := context.Background()
 	pool, err := pgxpool.New(ctx, cfg.DatabaseURL)
@@ -68,13 +73,6 @@ func main() {
 	q := db.New(pool)
 
 	for _, s := range seeds {
-		if s.Slug == "" || s.Name == "" || s.OfficialURL == "" {
-			log.Fatalf("seed: %q: slug, name and official_url are required", s.Slug)
-		}
-		if !validKinds[s.Kind] {
-			log.Fatalf("seed: %q: invalid kind %q", s.Slug, s.Kind)
-		}
-
 		ingestConfig := s.IngestConfig
 		if len(ingestConfig) == 0 {
 			ingestConfig = json.RawMessage(`{}`)
@@ -106,4 +104,71 @@ func main() {
 	}
 
 	fmt.Printf("seed: %d sources upserted\n", len(seeds))
+}
+
+func validateSeeds(seeds []sourceSeed) error {
+	if len(seeds) == 0 {
+		return fmt.Errorf("at least one source is required")
+	}
+
+	seen := map[string]struct{}{}
+	for _, s := range seeds {
+		if err := validateSeed(s); err != nil {
+			return err
+		}
+		if _, ok := seen[s.Slug]; ok {
+			return fmt.Errorf("seed: %q: duplicate slug", s.Slug)
+		}
+		seen[s.Slug] = struct{}{}
+	}
+
+	return nil
+}
+
+func validateSeed(s sourceSeed) error {
+	slug := strings.TrimSpace(s.Slug)
+	if slug == "" || strings.TrimSpace(s.Name) == "" || strings.TrimSpace(s.OfficialURL) == "" {
+		return fmt.Errorf("seed: %q: slug, name and official_url are required", s.Slug)
+	}
+	if slug != s.Slug {
+		return fmt.Errorf("seed: %q: slug must be trimmed", s.Slug)
+	}
+	if !validKinds[s.Kind] {
+		return fmt.Errorf("seed: %q: invalid kind %q", s.Slug, s.Kind)
+	}
+	if strings.TrimSpace(s.Category) == "" {
+		return fmt.Errorf("seed: %q: category is required", s.Slug)
+	}
+	if s.License == nil || strings.TrimSpace(*s.License) == "" {
+		return fmt.Errorf("seed: %q: license is required", s.Slug)
+	}
+	if len(s.IngestConfig) == 0 {
+		return fmt.Errorf("seed: %q: ingest_config is required", s.Slug)
+	}
+
+	var rawCfg ingest.Config
+	if err := json.Unmarshal(s.IngestConfig, &rawCfg); err != nil {
+		return fmt.Errorf("seed: %q: ingest_config: %w", s.Slug, err)
+	}
+	if len(rawCfg.IncludeGlobs) == 0 {
+		return fmt.Errorf("seed: %q: ingest_config.include_globs is required", s.Slug)
+	}
+
+	cfg, err := ingest.ParseConfig(s.IngestConfig)
+	if err != nil {
+		return fmt.Errorf("seed: %q: %w", s.Slug, err)
+	}
+	if strings.Count(cfg.Repo, "/") != 1 {
+		return fmt.Errorf("seed: %q: ingest_config.repo must be owner/name", s.Slug)
+	}
+	for _, glob := range append(cfg.IncludeGlobs, cfg.ExcludeGlobs...) {
+		if strings.TrimSpace(glob) == "" {
+			return fmt.Errorf("seed: %q: empty glob is not allowed", s.Slug)
+		}
+		if strings.HasPrefix(glob, "/") || strings.Contains(glob, "\\") {
+			return fmt.Errorf("seed: %q: glob %q must be relative and use forward slashes", s.Slug, glob)
+		}
+	}
+
+	return nil
 }

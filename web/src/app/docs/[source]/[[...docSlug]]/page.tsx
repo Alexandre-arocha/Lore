@@ -1,12 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import {
-  getDocument,
-  getSource,
-  type DocumentPage,
-  type NavNode,
-} from "@/lib/api";
+import { TableOfContents } from "@/components/table-of-contents";
+import { getDocument, getSource, type NavNode } from "@/lib/api";
 
 type DocPageProps = {
   params: Promise<{
@@ -14,6 +11,27 @@ type DocPageProps = {
     docSlug?: string[];
   }>;
 };
+
+export async function generateMetadata({
+  params,
+}: DocPageProps): Promise<Metadata> {
+  const { source: sourceSlug, docSlug } = await params;
+  const [source, doc] = await Promise.all([
+    getSource(sourceSlug),
+    getDocument(sourceSlug, docSlug?.join("/") ?? "index"),
+  ]);
+
+  if (!source) {
+    return { title: "Não encontrado — Lore" };
+  }
+  if (doc) {
+    return {
+      title: `${doc.title} · ${source.name} — Lore`,
+      description: `${doc.title} — documentação de ${source.name} no acervo Lore.`,
+    };
+  }
+  return { title: `${source.name} — Lore`, description: source.description };
+}
 
 export default async function DocPage({ params }: DocPageProps) {
   const { source: sourceSlug, docSlug } = await params;
@@ -33,7 +51,7 @@ export default async function DocPage({ params }: DocPageProps) {
   return (
     <main className="mx-auto grid w-full max-w-7xl grid-cols-1 px-5 sm:px-6 lg:grid-cols-[248px_minmax(0,1fr)] lg:gap-0 lg:px-0 xl:grid-cols-[248px_minmax(0,1fr)_240px]">
       {/* left: source + index */}
-      <aside className="border-border py-6 lg:sticky lg:top-14 lg:h-[calc(100svh-3.5rem)] lg:overflow-auto lg:border-r lg:py-8 lg:pr-6 lg:pl-5">
+      <aside className="max-h-[60vh] overflow-y-auto border-b border-border py-6 lg:sticky lg:top-14 lg:max-h-none lg:h-[calc(100svh-3.5rem)] lg:overflow-auto lg:border-r lg:border-b-0 lg:py-8 lg:pr-6 lg:pl-5">
         <Link
           href="/"
           className="font-mono text-xs text-faint underline-offset-4 hover:text-gold"
@@ -112,52 +130,9 @@ export default async function DocPage({ params }: DocPageProps) {
         </section>
       )}
 
-      {/* right: on this page */}
-      {doc ? <TocAside toc={doc.toc} /> : null}
+      {/* right: on this page (scroll-spy) */}
+      {doc ? <TableOfContents toc={doc.toc} /> : null}
     </main>
-  );
-}
-
-function TocAside({ toc }: { toc: DocumentPage["toc"] }) {
-  if (!toc || toc.length === 0) {
-    return null;
-  }
-
-  return (
-    <aside className="hidden py-8 xl:block xl:border-l xl:border-border xl:pl-6">
-      <div className="sticky top-[4.5rem]">
-        <p className="label mb-3">nesta página</p>
-        <nav className="border-l border-border">
-          {toc.map((h) => (
-            <div key={h.anchor}>
-              <TocLink anchor={h.anchor} title={h.title} indent="pl-3" />
-              {h.children?.map((c) => (
-                <TocLink key={c.anchor} anchor={c.anchor} title={c.title} indent="pl-6" />
-              ))}
-            </div>
-          ))}
-        </nav>
-      </div>
-    </aside>
-  );
-}
-
-function TocLink({
-  anchor,
-  title,
-  indent,
-}: {
-  anchor: string;
-  title: string;
-  indent: "pl-3" | "pl-6";
-}) {
-  return (
-    <a
-      href={`#${anchor}`}
-      className={`-ml-px block border-l-2 border-transparent py-1 font-mono text-xs ${indent} text-muted-foreground transition-colors hover:border-l-gold hover:text-gold`}
-    >
-      {title}
-    </a>
   );
 }
 
