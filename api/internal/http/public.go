@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"lore/api/internal/db"
+	"lore/api/internal/sourceconfig"
 )
 
 const (
@@ -24,7 +25,7 @@ func (s *Server) handleListSources(c *gin.Context) {
 
 	var kind *db.SourceKind
 	if raw := strings.TrimSpace(c.Query("kind")); raw != "" {
-		if !validKinds[raw] {
+		if !sourceconfig.ValidKind(raw) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "kind invalido (language|framework|library|tool)"})
 			return
 		}

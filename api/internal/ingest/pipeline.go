@@ -85,13 +85,23 @@ type Result struct {
 
 // Pipeline runs the full ingestion for a source.
 type Pipeline struct {
-	fetcher  *GitHubFetcher
+	fetcher  repoFetcher
 	renderer *Renderer
-	queries  db.Querier
+	queries  documentStore
 	logger   *slog.Logger
 }
 
-func NewPipeline(fetcher *GitHubFetcher, queries db.Querier, logger *slog.Logger) *Pipeline {
+type repoFetcher interface {
+	Fetch(context.Context, Config) ([]RawFile, error)
+}
+
+type documentStore interface {
+	UpsertDocument(context.Context, db.UpsertDocumentParams) (uuid.UUID, error)
+	PruneDocuments(context.Context, db.PruneDocumentsParams) error
+	SetSourceNav(context.Context, db.SetSourceNavParams) error
+}
+
+func NewPipeline(fetcher repoFetcher, queries documentStore, logger *slog.Logger) *Pipeline {
 	if logger == nil {
 		logger = slog.Default()
 	}
@@ -115,6 +125,9 @@ func (p *Pipeline) Sync(ctx context.Context, source db.Source) (Result, error) {
 	files, err := p.fetcher.Fetch(ctx, cfg)
 	if err != nil {
 		return Result{}, err
+	}
+	if len(files) == 0 {
+		return Result{}, fmt.Errorf("ingest: no matching docs found for %s; refusing to prune existing docs", source.Slug)
 	}
 
 	// Process in path order so books that encode order in their filenames
@@ -181,6 +194,9 @@ func (p *Pipeline) Sync(ctx context.Context, source db.Source) (Result, error) {
 		metas = append(metas, DocMeta{Slug: doc.Slug, Title: doc.Title, Position: position})
 		kept = append(kept, doc.Slug)
 		res.DocumentsProcessed++
+	}
+	if res.DocumentsProcessed == 0 {
+		return res, fmt.Errorf("ingest: processed zero documents for %s; refusing to prune existing docs", source.Slug)
 	}
 
 	if err := p.queries.PruneDocuments(ctx, db.PruneDocumentsParams{SourceID: source.ID, KeptSlugs: kept}); err != nil {

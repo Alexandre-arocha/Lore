@@ -13,14 +13,14 @@ import (
 // Server holds the dependencies shared by the HTTP handlers.
 type Server struct {
 	pool       *pgxpool.Pool
-	queries    *db.Queries
+	queries    db.Querier
 	river      *river.Client[pgx.Tx]
 	adminToken string
 }
 
 // NewServer builds a Server with its dependencies. river may be nil (e.g. in
 // tests) — admin sync endpoints then report the queue as unavailable.
-func NewServer(pool *pgxpool.Pool, queries *db.Queries, riverClient *river.Client[pgx.Tx], adminToken string) *Server {
+func NewServer(pool *pgxpool.Pool, queries db.Querier, riverClient *river.Client[pgx.Tx], adminToken string) *Server {
 	return &Server{
 		pool:       pool,
 		queries:    queries,
@@ -44,6 +44,7 @@ func (s *Server) Router() *gin.Engine {
 
 		admin := api.Group("/admin", s.requireAdmin())
 		{
+			admin.GET("/sources/status", s.handleAdminSourcesStatus)
 			admin.POST("/sources", s.handleUpsertSource)
 			admin.POST("/sources/:slug/sync", s.handleSyncSource)
 		}

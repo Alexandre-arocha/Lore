@@ -19,6 +19,7 @@ import (
 	"lore/api/internal/db"
 	lorehttp "lore/api/internal/http"
 	"lore/api/internal/ingest"
+	"lore/api/internal/sourcecheck"
 )
 
 func main() {
@@ -48,7 +49,8 @@ func main() {
 
 	fetcher := ingest.NewGitHubFetcher(cfg.GithubToken)
 	pipeline := ingest.NewPipeline(fetcher, queries, logger)
-	worker := ingest.NewSyncWorker(queries, pipeline, logger)
+	preflight := sourcecheck.New(cfg.GithubToken)
+	worker := ingest.NewSyncWorker(queries, pipeline, logger, ingest.WithPreflightChecker(preflight))
 
 	riverClient, err := ingest.NewRiverClient(pool, worker)
 	if err != nil {

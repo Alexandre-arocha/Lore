@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 
 	"lore/api/internal/db"
 	"lore/api/internal/ingest"
+	"lore/api/internal/sourceconfig"
 )
 
 // requireAdmin gates the /api/admin routes behind a shared token. When no admin
@@ -23,46 +25,25 @@ func (s *Server) requireAdmin() gin.HandlerFunc {
 			return
 		}
 		if c.GetHeader("X-Admin-Token") != s.adminToken {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token inválido"})
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token invalido"})
 			return
 		}
 		c.Next()
 	}
 }
 
-// upsertSourceRequest is the config-driven shape for creating/updating a source.
-// It mirrors seed/sources.json so the same definitions work in both places.
-type upsertSourceRequest struct {
-	Slug         string          `json:"slug"`
-	Name         string          `json:"name"`
-	Kind         string          `json:"kind"`
-	Category     string          `json:"category"`
-	Description  string          `json:"description"`
-	LogoURL      *string         `json:"logo_url"`
-	OfficialURL  string          `json:"official_url"`
-	License      *string         `json:"license"`
-	Version      *string         `json:"version"`
-	IngestConfig json.RawMessage `json:"ingest_config"`
-}
-
-var validKinds = map[string]bool{"language": true, "framework": true, "library": true, "tool": true}
+// upsertSourceRequest mirrors seed/sources.json so the same definitions work in
+// both places.
+type upsertSourceRequest = sourceconfig.Definition
 
 func (s *Server) handleUpsertSource(c *gin.Context) {
 	var req upsertSourceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON inválido: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "JSON invalido: " + err.Error()})
 		return
 	}
 	if err := validateUpsertSourceRequest(req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if req.Slug == "" || req.Name == "" || req.OfficialURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "slug, name e official_url são obrigatórios"})
-		return
-	}
-	if !validKinds[req.Kind] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "kind inválido (language|framework|library|tool)"})
 		return
 	}
 
@@ -100,51 +81,79 @@ func (s *Server) handleUpsertSource(c *gin.Context) {
 }
 
 func validateUpsertSourceRequest(req upsertSourceRequest) error {
-	slug := strings.TrimSpace(req.Slug)
-	if slug == "" || strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.OfficialURL) == "" {
-		return errors.New("slug, name e official_url sao obrigatorios")
-	}
-	if slug != req.Slug {
-		return errors.New("slug deve vir sem espacos nas pontas")
-	}
-	if !validKinds[req.Kind] {
-		return errors.New("kind invalido (language|framework|library|tool)")
-	}
-	if strings.TrimSpace(req.Category) == "" {
-		return errors.New("category e obrigatoria")
-	}
-	if req.License == nil || strings.TrimSpace(*req.License) == "" {
-		return errors.New("license e obrigatoria")
-	}
-	if len(req.IngestConfig) == 0 {
-		return errors.New("ingest_config e obrigatorio")
+	return sourceconfig.ValidateDefinition(req)
+}
+
+func (s *Server) handleAdminSourcesStatus(c *gin.Context) {
+	if !s.hasQueries(c) {
+		return
 	}
 
-	var rawCfg ingest.Config
-	if err := json.Unmarshal(req.IngestConfig, &rawCfg); err != nil {
-		return errors.New("ingest_config invalido: " + err.Error())
-	}
-	if len(rawCfg.IncludeGlobs) == 0 {
-		return errors.New("ingest_config.include_globs e obrigatorio")
-	}
-
-	cfg, err := ingest.ParseConfig(req.IngestConfig)
+	sources, err := s.queries.ListSources(c.Request.Context(), db.ListSourcesParams{})
 	if err != nil {
-		return err
-	}
-	if strings.Count(cfg.Repo, "/") != 1 {
-		return errors.New("ingest_config.repo deve estar no formato owner/name")
-	}
-	for _, glob := range append(cfg.IncludeGlobs, cfg.ExcludeGlobs...) {
-		if strings.TrimSpace(glob) == "" {
-			return errors.New("globs vazios nao sao permitidos")
-		}
-		if strings.HasPrefix(glob, "/") || strings.Contains(glob, "\\") {
-			return errors.New("globs devem ser relativos e usar barras /")
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
-	return nil
+	items := make([]adminSourceStatusResponse, 0, len(sources))
+	for _, row := range sources {
+		latestRun, err := s.queries.GetLatestSyncRun(c.Request.Context(), row.Source.ID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		var latest *db.SyncRun
+		if err == nil {
+			latest = &latestRun
+		}
+		items = append(items, adminSourceStatus(row, latest))
+	}
+
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
+type adminSourceStatusResponse struct {
+	Slug         string                `json:"slug"`
+	Status       string                `json:"status"`
+	DocCount     int32                 `json:"doc_count"`
+	LastSyncedAt *time.Time            `json:"last_synced_at"`
+	LatestRun    *adminSyncRunResponse `json:"latest_run"`
+}
+
+type adminSyncRunResponse struct {
+	Status             string     `json:"status"`
+	DocumentsProcessed int32      `json:"documents_processed"`
+	ErrorMessage       *string    `json:"error_message"`
+	StartedAt          *time.Time `json:"started_at"`
+	FinishedAt         *time.Time `json:"finished_at"`
+}
+
+func adminSourceStatus(row db.ListSourcesRow, latest *db.SyncRun) adminSourceStatusResponse {
+	resp := adminSourceStatusResponse{
+		Slug:         row.Source.Slug,
+		Status:       string(row.Source.Status),
+		DocCount:     row.DocCount,
+		LastSyncedAt: timePtr(row.Source.LastSyncedAt),
+	}
+	if latest != nil {
+		resp.LatestRun = &adminSyncRunResponse{
+			Status:             string(latest.Status),
+			DocumentsProcessed: latest.DocumentsProcessed,
+			ErrorMessage:       latest.ErrorMessage,
+			StartedAt:          timePtr(latest.StartedAt),
+			FinishedAt:         timePtr(latest.FinishedAt),
+		}
+	}
+	return resp
+}
+
+func timePtr(ts pgtype.Timestamptz) *time.Time {
+	if !ts.Valid {
+		return nil
+	}
+	t := ts.Time
+	return &t
 }
 
 func (s *Server) handleSyncSource(c *gin.Context) {
@@ -153,7 +162,7 @@ func (s *Server) handleSyncSource(c *gin.Context) {
 	source, err := s.queries.GetSourceBySlug(c.Request.Context(), slug)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "source não encontrada"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "source nao encontrada"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -161,7 +170,7 @@ func (s *Server) handleSyncSource(c *gin.Context) {
 	}
 
 	if s.river == nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fila de jobs indisponível"})
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "fila de jobs indisponivel"})
 		return
 	}
 

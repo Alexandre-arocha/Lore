@@ -2,6 +2,8 @@ package ingest
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -23,16 +25,50 @@ func (SyncSourceArgs) Kind() string { return "sync_source" }
 // writing a sync_run row for observability.
 type SyncWorker struct {
 	river.WorkerDefaults[SyncSourceArgs]
-	queries  db.Querier
-	pipeline *Pipeline
-	logger   *slog.Logger
+	queries   syncQueries
+	pipeline  syncPipeline
+	preflight PreflightChecker
+	logger    *slog.Logger
 }
 
-func NewSyncWorker(queries db.Querier, pipeline *Pipeline, logger *slog.Logger) *SyncWorker {
+type syncQueries interface {
+	GetSourceByID(context.Context, uuid.UUID) (db.Source, error)
+	SetSourceStatus(context.Context, db.SetSourceStatusParams) error
+	CreateSyncRun(context.Context, db.CreateSyncRunParams) (db.SyncRun, error)
+	FinishSyncRun(context.Context, db.FinishSyncRunParams) error
+	MarkSourceSynced(context.Context, db.MarkSourceSyncedParams) error
+}
+
+type syncPipeline interface {
+	Sync(context.Context, db.Source) (Result, error)
+}
+
+type PreflightSource struct {
+	Slug         string
+	IngestConfig json.RawMessage
+}
+
+type PreflightChecker interface {
+	Preflight(context.Context, PreflightSource) error
+}
+
+type SyncWorkerOption func(*SyncWorker)
+
+func WithPreflightChecker(checker PreflightChecker) SyncWorkerOption {
+	return func(w *SyncWorker) {
+		w.preflight = checker
+	}
+}
+
+func NewSyncWorker(queries syncQueries, pipeline syncPipeline, logger *slog.Logger, opts ...SyncWorkerOption) *SyncWorker {
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &SyncWorker{queries: queries, pipeline: pipeline, logger: logger}
+	w := &SyncWorker{queries: queries, pipeline: pipeline, logger: logger}
+	for _, opt := range opts {
+		opt(w)
+	}
+	return w
 }
 
 func (w *SyncWorker) Work(ctx context.Context, job *river.Job[SyncSourceArgs]) error {
@@ -54,18 +90,18 @@ func (w *SyncWorker) Work(ctx context.Context, job *river.Job[SyncSourceArgs]) e
 		return err
 	}
 
+	if w.preflight != nil {
+		if err := w.preflight.Preflight(ctx, PreflightSource{Slug: source.Slug, IngestConfig: source.IngestConfig}); err != nil {
+			syncErr := fmt.Errorf("preflight: %w", err)
+			w.finishSyncError(run, source, Result{}, syncErr)
+			w.logger.Error("ingest: preflight failed", "source", source.Slug, "err", err)
+			return syncErr
+		}
+	}
+
 	res, syncErr := w.pipeline.Sync(ctx, source)
 	if syncErr != nil {
-		msg := syncErr.Error()
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		_ = w.queries.SetSourceStatus(cleanupCtx, db.SetSourceStatusParams{ID: source.ID, Status: db.SourceStatusError})
-		_ = w.queries.FinishSyncRun(cleanupCtx, db.FinishSyncRunParams{
-			ID:                 run.ID,
-			Status:             db.SyncStatusError,
-			DocumentsProcessed: int32(res.DocumentsProcessed),
-			ErrorMessage:       &msg,
-		})
+		w.finishSyncError(run, source, res, syncErr)
 		w.logger.Error("ingest: sync failed", "source", source.Slug, "err", syncErr)
 		return syncErr
 	}
@@ -82,4 +118,17 @@ func (w *SyncWorker) Work(ctx context.Context, job *river.Job[SyncSourceArgs]) e
 		"skipped", res.FilesSkipped,
 		"warnings", res.Warnings)
 	return nil
+}
+
+func (w *SyncWorker) finishSyncError(run db.SyncRun, source db.Source, res Result, syncErr error) {
+	msg := syncErr.Error()
+	cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	_ = w.queries.SetSourceStatus(cleanupCtx, db.SetSourceStatusParams{ID: source.ID, Status: db.SourceStatusError})
+	_ = w.queries.FinishSyncRun(cleanupCtx, db.FinishSyncRunParams{
+		ID:                 run.ID,
+		Status:             db.SyncStatusError,
+		DocumentsProcessed: int32(res.DocumentsProcessed),
+		ErrorMessage:       &msg,
+	})
 }

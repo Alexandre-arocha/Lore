@@ -1,8 +1,14 @@
 package ingest
 
 import (
+	"context"
+	"encoding/json"
 	"strings"
 	"testing"
+
+	"github.com/google/uuid"
+
+	"lore/api/internal/db"
 )
 
 func TestDeriveSlug(t *testing.T) {
@@ -227,4 +233,51 @@ func TestDocBookXMLTitle(t *testing.T) {
 			t.Fatalf("docBookXMLTitle = %q, want %q", got, want)
 		}
 	}
+}
+
+func TestPipelineRefusesToPruneWhenFetchReturnsNoDocs(t *testing.T) {
+	store := &fakeDocumentStore{}
+	pipeline := NewPipeline(fakeRepoFetcher{}, store, nil)
+
+	_, err := pipeline.Sync(context.Background(), db.Source{
+		ID:   uuid.New(),
+		Slug: "demo",
+		IngestConfig: json.RawMessage(`{
+			"repo": "owner/repo",
+			"branch": "main",
+			"docs_path": "docs",
+			"include_globs": ["**/*.md"]
+		}`),
+	})
+	if err == nil || !strings.Contains(err.Error(), "no matching docs") {
+		t.Fatalf("Sync error = %v, want no matching docs error", err)
+	}
+	if store.pruneCalled {
+		t.Fatal("PruneDocuments was called for an empty fetch")
+	}
+}
+
+type fakeRepoFetcher struct {
+	files []RawFile
+}
+
+func (f fakeRepoFetcher) Fetch(context.Context, Config) ([]RawFile, error) {
+	return f.files, nil
+}
+
+type fakeDocumentStore struct {
+	pruneCalled bool
+}
+
+func (f *fakeDocumentStore) UpsertDocument(context.Context, db.UpsertDocumentParams) (uuid.UUID, error) {
+	return uuid.New(), nil
+}
+
+func (f *fakeDocumentStore) PruneDocuments(context.Context, db.PruneDocumentsParams) error {
+	f.pruneCalled = true
+	return nil
+}
+
+func (f *fakeDocumentStore) SetSourceNav(context.Context, db.SetSourceNavParams) error {
+	return nil
 }

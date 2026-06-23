@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -18,7 +19,8 @@ func main() {
 	seedPath := flag.String("seed", "seed/sources.json", "path to the sources seed JSON")
 	only := flag.String("only", "", "comma-separated source slugs to check")
 	timeout := flag.Duration("timeout", 2*time.Minute, "overall check timeout")
-	repoMetadata := flag.Bool("repo-metadata", false, "also fetch repo metadata such as default_branch")
+	repoMetadata := flag.Bool("repo-metadata", true, "fetch repo metadata such as default_branch")
+	jsonOutput := flag.Bool("json", false, "print machine-readable JSON instead of human output")
 	flag.Parse()
 
 	_ = godotenv.Load()
@@ -39,34 +41,70 @@ func main() {
 
 	checker := sourcecheck.New(os.Getenv("GITHUB_TOKEN"), sourcecheck.WithRepoMetadata(*repoMetadata))
 	var failed int
+	results := make([]checkResult, 0, len(sources))
 	for _, source := range sources {
 		report, err := checker.Check(ctx, source)
 		if err != nil {
 			failed++
-			fmt.Fprintf(os.Stderr, "FAIL %-16s %v\n", source.Slug, err)
+			results = append(results, checkResult{Slug: source.Slug, Status: "fail", Error: err.Error(), Report: report})
+			if !*jsonOutput {
+				fmt.Fprintf(os.Stderr, "FAIL %-16s %v\n", source.Slug, err)
+			}
 			continue
 		}
+		results = append(results, checkResult{Slug: source.Slug, Status: "ok", Report: report})
 
 		branchNote := ""
 		if report.DefaultBranch != "" && report.Branch != report.DefaultBranch {
 			branchNote = " default=" + report.DefaultBranch
 		}
-		fmt.Printf(
-			"OK   %-16s %-38s docs_path=%-34q files=%4d%s sample=%s\n",
-			report.Slug,
-			report.Repo+"@"+report.Branch,
-			report.DocsPath,
-			report.CandidateFiles,
-			branchNote,
-			strings.Join(report.Sample, ", "),
-		)
+		if !*jsonOutput {
+			fmt.Printf(
+				"OK   %-16s %-38s docs_path=%-34q files=%4d%s sample=%s\n",
+				report.Slug,
+				report.Repo+"@"+report.Branch,
+				report.DocsPath,
+				report.CandidateFiles,
+				branchNote,
+				strings.Join(report.Sample, ", "),
+			)
+		}
+	}
+
+	if *jsonOutput {
+		out := checkOutput{
+			Total:  len(sources),
+			Failed: failed,
+			Items:  results,
+		}
+		if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
+			fmt.Fprintf(os.Stderr, "check-sources: encode json: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	if failed > 0 {
-		fmt.Fprintf(os.Stderr, "check-sources: %d/%d sources failed\n", failed, len(sources))
+		if !*jsonOutput {
+			fmt.Fprintf(os.Stderr, "check-sources: %d/%d sources failed\n", failed, len(sources))
+		}
 		os.Exit(1)
 	}
-	fmt.Printf("check-sources: %d sources ok\n", len(sources))
+	if !*jsonOutput {
+		fmt.Printf("check-sources: %d sources ok\n", len(sources))
+	}
+}
+
+type checkOutput struct {
+	Total  int           `json:"total"`
+	Failed int           `json:"failed"`
+	Items  []checkResult `json:"items"`
+}
+
+type checkResult struct {
+	Slug   string             `json:"slug"`
+	Status string             `json:"status"`
+	Error  string             `json:"error,omitempty"`
+	Report sourcecheck.Report `json:"report"`
 }
 
 func filterSources(sources []sourcecheck.Source, only string) []sourcecheck.Source {

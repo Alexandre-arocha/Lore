@@ -47,6 +47,7 @@ func (g *GitHubFetcher) Fetch(ctx context.Context, cfg Config) ([]RawFile, error
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("User-Agent", "LoreIngest/1.0")
 	if g.token != "" {
 		req.Header.Set("Authorization", "Bearer "+g.token)
 	}

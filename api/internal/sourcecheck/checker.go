@@ -41,15 +41,15 @@ func LoadSeed(path string) ([]Source, error) {
 
 // Report summarizes one source check.
 type Report struct {
-	Slug           string
-	Repo           string
-	Branch         string
-	DefaultBranch  string
-	DocsPath       string
-	DocsPathFiles  int
-	CandidateFiles int
-	TreeTruncated  bool
-	Sample         []string
+	Slug           string   `json:"slug"`
+	Repo           string   `json:"repo"`
+	Branch         string   `json:"branch"`
+	DefaultBranch  string   `json:"default_branch"`
+	DocsPath       string   `json:"docs_path"`
+	DocsPathFiles  int      `json:"docs_path_files"`
+	CandidateFiles int      `json:"candidate_files"`
+	TreeTruncated  bool     `json:"tree_truncated"`
+	Sample         []string `json:"sample"`
 }
 
 // Checker verifies source configs against the GitHub REST API.
@@ -175,6 +175,13 @@ func (c *Checker) Check(ctx context.Context, source Source) (Report, error) {
 	}
 
 	return report, nil
+}
+
+// Preflight adapts Checker for the ingestion worker. It records only success or
+// failure there; detailed reports remain available through Check/cmd/check-sources.
+func (c *Checker) Preflight(ctx context.Context, source ingest.PreflightSource) error {
+	_, err := c.Check(ctx, Source{Slug: source.Slug, IngestConfig: source.IngestConfig})
+	return err
 }
 
 func relativeToDocsPath(fullPath, docsPath string) (string, bool) {
