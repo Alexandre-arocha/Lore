@@ -117,7 +117,9 @@ func (g *GitHubFetcher) Fetch(ctx context.Context, cfg Config) ([]RawFile, error
 	return files, nil
 }
 
-func supportedDocExtension(ext string) bool {
+// SupportedDocExtension reports whether ext is a documentation format the
+// ingestion pipeline can process.
+func SupportedDocExtension(ext string) bool {
 	switch strings.ToLower(ext) {
 	case ".md", ".markdown", ".mdx", ".rst", ".txt", ".xml", ".sgml":
 		return true
@@ -126,8 +128,16 @@ func supportedDocExtension(ext string) bool {
 	}
 }
 
-// matchGlobs reports whether name passes the include/exclude globs. An empty
+func supportedDocExtension(ext string) bool {
+	return SupportedDocExtension(ext)
+}
+
+// MatchGlobs reports whether name passes the include/exclude globs. An empty
 // include list matches everything. Patterns support "**" via doublestar.
+func MatchGlobs(name string, include, exclude []string) bool {
+	return matchGlobs(name, include, exclude)
+}
+
 func matchGlobs(name string, include, exclude []string) bool {
 	included := len(include) == 0
 	for _, p := range include {
