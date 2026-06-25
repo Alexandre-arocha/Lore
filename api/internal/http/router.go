@@ -34,8 +34,14 @@ func (s *Server) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
 
+	r.GET("/", s.handleRoot)
+	r.GET("/favicon.ico", s.handleFavicon)
+	r.NoRoute(s.handleNotFound)
+
 	api := r.Group("/api")
 	{
+		api.GET("", s.handleAPIRoot)
+		api.GET("/", s.handleAPIRoot)
 		api.GET("/health", s.handleHealth)
 		api.GET("/sources", s.handleListSources)
 		api.GET("/sources/:slug", s.handleGetSource)
@@ -46,6 +52,7 @@ func (s *Server) Router() *gin.Engine {
 		{
 			admin.GET("/sources/status", s.handleAdminSourcesStatus)
 			admin.POST("/sources", s.handleUpsertSource)
+			admin.GET("/sources/:slug/runs", s.handleAdminSourceRuns)
 			admin.POST("/sources/:slug/sync", s.handleSyncSource)
 		}
 	}

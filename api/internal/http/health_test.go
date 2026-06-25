@@ -60,3 +60,33 @@ func TestRouterRegistersHealth(t *testing.T) {
 		t.Fatalf("GET /api/health = %d, want %d", w.Code, http.StatusOK)
 	}
 }
+
+func TestRouterRegistersRootPages(t *testing.T) {
+	s := NewServer(nil, nil, nil, "")
+	r := s.Router()
+
+	for _, path := range []string{"/", "/api", "/alguma-rota"} {
+		t.Run(path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			w := httptest.NewRecorder()
+			r.ServeHTTP(w, req)
+
+			if w.Code != http.StatusOK {
+				t.Fatalf("GET %s = %d, want %d", path, w.Code, http.StatusOK)
+			}
+		})
+	}
+}
+
+func TestRouterHandlesFavicon(t *testing.T) {
+	s := NewServer(nil, nil, nil, "")
+	r := s.Router()
+
+	req := httptest.NewRequest(http.MethodGet, "/favicon.ico", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("GET /favicon.ico = %d, want %d", w.Code, http.StatusNoContent)
+	}
+}

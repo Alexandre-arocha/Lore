@@ -39,7 +39,8 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	checker := sourcecheck.New(os.Getenv("GITHUB_TOKEN"), sourcecheck.WithRepoMetadata(*repoMetadata))
+	githubToken := strings.TrimSpace(os.Getenv("GITHUB_TOKEN"))
+	checker := sourcecheck.New(githubToken, sourcecheck.WithRepoMetadata(*repoMetadata))
 	var failed int
 	results := make([]checkResult, 0, len(sources))
 	for _, source := range sources {
@@ -71,11 +72,13 @@ func main() {
 		}
 	}
 
+	hint := githubTokenHint(githubToken, results)
 	if *jsonOutput {
 		out := checkOutput{
 			Total:  len(sources),
 			Failed: failed,
 			Items:  results,
+			Hint:   hint,
 		}
 		if err := json.NewEncoder(os.Stdout).Encode(out); err != nil {
 			fmt.Fprintf(os.Stderr, "check-sources: encode json: %v\n", err)
@@ -86,6 +89,9 @@ func main() {
 	if failed > 0 {
 		if !*jsonOutput {
 			fmt.Fprintf(os.Stderr, "check-sources: %d/%d sources failed\n", failed, len(sources))
+			if hint != "" {
+				fmt.Fprintf(os.Stderr, "hint: %s\n", hint)
+			}
 		}
 		os.Exit(1)
 	}
@@ -97,6 +103,7 @@ func main() {
 type checkOutput struct {
 	Total  int           `json:"total"`
 	Failed int           `json:"failed"`
+	Hint   string        `json:"hint,omitempty"`
 	Items  []checkResult `json:"items"`
 }
 
@@ -126,4 +133,16 @@ func filterSources(sources []sourcecheck.Source, only string) []sourcecheck.Sour
 		}
 	}
 	return filtered
+}
+
+func githubTokenHint(token string, results []checkResult) string {
+	if token != "" {
+		return ""
+	}
+	for _, result := range results {
+		if strings.Contains(strings.ToLower(result.Error), "rate limit exceeded") {
+			return "GitHub API rate limit exceeded; set GITHUB_TOKEN in api/.env or in the environment and rerun check-sources."
+		}
+	}
+	return ""
 }

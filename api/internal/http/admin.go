@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +16,11 @@ import (
 	"lore/api/internal/db"
 	"lore/api/internal/ingest"
 	"lore/api/internal/sourceconfig"
+)
+
+const (
+	defaultAdminRunLimit = 10
+	maxAdminRunLimit     = 50
 )
 
 // requireAdmin gates the /api/admin routes behind a shared token. When no admin
@@ -113,6 +120,38 @@ func (s *Server) handleAdminSourcesStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"items": items})
 }
 
+func (s *Server) handleAdminSourceRuns(c *gin.Context) {
+	if !s.hasQueries(c) {
+		return
+	}
+
+	source, err := s.queries.GetSourceBySlug(c.Request.Context(), c.Param("slug"))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "source nao encontrada"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	limit := parseAdminRunLimit(c.Query("limit"))
+	runs, err := s.queries.ListSyncRunsBySource(c.Request.Context(), db.ListSyncRunsBySourceParams{
+		SourceID: source.ID,
+		Limit:    int32(limit),
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	items := make([]adminSyncRunListResponse, 0, len(runs))
+	for _, run := range runs {
+		items = append(items, adminSyncRunListItem(run))
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
+}
+
 type adminSourceStatusResponse struct {
 	Slug         string                `json:"slug"`
 	Status       string                `json:"status"`
@@ -122,6 +161,15 @@ type adminSourceStatusResponse struct {
 }
 
 type adminSyncRunResponse struct {
+	Status             string     `json:"status"`
+	DocumentsProcessed int32      `json:"documents_processed"`
+	ErrorMessage       *string    `json:"error_message"`
+	StartedAt          *time.Time `json:"started_at"`
+	FinishedAt         *time.Time `json:"finished_at"`
+}
+
+type adminSyncRunListResponse struct {
+	ID                 string     `json:"id"`
 	Status             string     `json:"status"`
 	DocumentsProcessed int32      `json:"documents_processed"`
 	ErrorMessage       *string    `json:"error_message"`
@@ -154,6 +202,28 @@ func timePtr(ts pgtype.Timestamptz) *time.Time {
 	}
 	t := ts.Time
 	return &t
+}
+
+func adminSyncRunListItem(run db.SyncRun) adminSyncRunListResponse {
+	return adminSyncRunListResponse{
+		ID:                 run.ID.String(),
+		Status:             string(run.Status),
+		DocumentsProcessed: run.DocumentsProcessed,
+		ErrorMessage:       run.ErrorMessage,
+		StartedAt:          timePtr(run.StartedAt),
+		FinishedAt:         timePtr(run.FinishedAt),
+	}
+}
+
+func parseAdminRunLimit(raw string) int {
+	n, err := strconv.Atoi(strings.TrimSpace(raw))
+	if err != nil || n <= 0 {
+		return defaultAdminRunLimit
+	}
+	if n > maxAdminRunLimit {
+		return maxAdminRunLimit
+	}
+	return n
 }
 
 func (s *Server) handleSyncSource(c *gin.Context) {
