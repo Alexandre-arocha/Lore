@@ -196,11 +196,15 @@ type adminStatusQueries struct {
 	sources            []db.ListSourcesRow
 	latest             map[uuid.UUID]db.SyncRun
 	sourceBySlug       map[string]db.Source
+	docCounts          map[uuid.UUID]int64
 	runs               []db.SyncRun
 	requestedRunsLimit int32
 }
 
-func (q *adminStatusQueries) CountDocumentsBySource(context.Context, uuid.UUID) (int64, error) {
+func (q *adminStatusQueries) CountDocumentsBySource(_ context.Context, sourceID uuid.UUID) (int64, error) {
+	if count, ok := q.docCounts[sourceID]; ok {
+		return count, nil
+	}
 	return 0, nil
 }
 

@@ -3,6 +3,7 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import "./chroma.css";
 
+import { ReadingProgress } from "@/components/reading-progress";
 import { SiteHeader } from "@/components/site-header";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -37,6 +38,7 @@ export default function RootLayout({
     >
       <body className="flex min-h-full flex-col bg-background text-foreground">
         <ThemeProvider attribute="class" forcedTheme="dark" disableTransitionOnChange>
+          <ReadingProgress />
           <SiteHeader />
           <div className="flex-1">{children}</div>
         </ThemeProvider>

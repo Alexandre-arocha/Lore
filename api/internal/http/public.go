@@ -69,7 +69,15 @@ func (s *Server) handleGetSource(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, sourceDetail(source))
+	docCount, err := s.queries.CountDocumentsBySource(c.Request.Context(), source.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	response := sourceDetail(source)
+	response.DocCount = int32(docCount)
+	c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) handleGetDocument(c *gin.Context) {

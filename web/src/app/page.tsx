@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { BookOpen, Layers3, LibraryBig, Search } from "lucide-react";
 
 import { getSources, searchDocuments, type Source } from "@/lib/api";
 
@@ -9,6 +10,13 @@ type HomeProps = {
     tipo?: string | string[];
     area?: string | string[];
   }>;
+};
+
+type CatalogStats = {
+  sources: number;
+  docs: number;
+  categories: number;
+  lastSyncedAt: string | null;
 };
 
 const CATEGORY_ORDER = ["frontend", "backend", "mobile", "systems"];
@@ -31,41 +39,48 @@ export default async function Home({ searchParams }: HomeProps) {
       (!selectedKind || s.kind === selectedKind) &&
       (!selectedCategory || s.category === selectedCategory),
   );
+  const stats = catalogStats(ready);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-5 sm:px-6 lg:px-8">
-      {/* hero */}
-      <section className="border-b border-border py-12 sm:py-16">
-        <p className="label mb-3">// acervo</p>
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-          Documentação de linguagens e frameworks
-        </h1>
-        <p className="mt-4 max-w-2xl leading-7 text-muted-foreground">
-          Um índice só, leitura limpa e busca unificada. O conteúdo fica no
-          idioma original; a curadoria é em PT-BR.
-        </p>
+      <section className="grid gap-8 border-b border-border py-12 sm:py-16 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+        <div>
+          <p className="label mb-3">// acervo</p>
+          <h1 className="max-w-3xl text-4xl font-semibold sm:text-5xl">
+            Documentação de linguagens e frameworks
+          </h1>
+          <p className="mt-4 max-w-2xl leading-7 text-muted-foreground">
+            Um índice só, leitura limpa e busca unificada. O conteúdo fica no
+            idioma original; a curadoria é em PT-BR.
+          </p>
 
-        <form
-          action="/"
-          className="mt-8 flex max-w-2xl border border-border bg-card focus-within:border-line-strong"
-        >
-          <span className="flex items-center pl-3 font-mono text-gold" aria-hidden>
-            {">"}
-          </span>
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="buscar em todas as fontes…"
-            aria-label="Buscar na documentação"
-            className="h-11 w-full bg-transparent px-3 font-mono text-sm outline-none placeholder:text-faint"
-          />
-          <button
-            type="submit"
-            className="border-l border-border bg-surface-2 px-4 font-mono text-xs uppercase tracking-wider transition-colors hover:bg-primary hover:text-primary-foreground"
+          <form
+            action="/"
+            className="mt-8 flex max-w-2xl border border-border bg-card focus-within:border-line-strong"
           >
-            buscar
-          </button>
-        </form>
+            <span
+              className="flex items-center pl-3 font-mono text-gold"
+              aria-hidden
+            >
+              {">"}
+            </span>
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="buscar em todas as fontes..."
+              aria-label="Buscar na documentação"
+              className="h-11 w-full bg-transparent px-3 font-mono text-sm outline-none placeholder:text-faint"
+            />
+            <button
+              type="submit"
+              className="border-l border-border bg-surface-2 px-4 font-mono text-xs uppercase tracking-wider transition-colors hover:bg-primary hover:text-primary-foreground"
+            >
+              buscar
+            </button>
+          </form>
+        </div>
+
+        <HeroStats stats={stats} />
       </section>
 
       {q ? (
@@ -82,6 +97,66 @@ export default async function Home({ searchParams }: HomeProps) {
         </div>
       )}
     </main>
+  );
+}
+
+function HeroStats({ stats }: { stats: CatalogStats }) {
+  return (
+    <aside className="border border-border bg-surface-2/20">
+      <div className="border-b border-border p-4">
+        <p className="label mb-2">estado do acervo</p>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Fontes ativas, documentos sincronizados e áreas prontas para leitura.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 gap-px bg-border">
+        <StatCell
+          icon={<LibraryBig className="size-4" aria-hidden />}
+          label="fontes"
+          value={stats.sources}
+        />
+        <StatCell
+          icon={<BookOpen className="size-4" aria-hidden />}
+          label="docs"
+          value={formatNumber(stats.docs)}
+        />
+        <StatCell
+          icon={<Layers3 className="size-4" aria-hidden />}
+          label="áreas"
+          value={stats.categories}
+        />
+        <StatCell
+          icon={<Search className="size-4" aria-hidden />}
+          label="busca"
+          value="FTS"
+        />
+      </div>
+      {stats.lastSyncedAt ? (
+        <p className="border-t border-border p-3 font-mono text-xs text-faint">
+          última ingestão: {formatDate(stats.lastSyncedAt)}
+        </p>
+      ) : null}
+    </aside>
+  );
+}
+
+function StatCell({
+  icon,
+  label,
+  value,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="bg-background p-4">
+      <div className="mb-3 text-gold">{icon}</div>
+      <p className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-faint">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    </div>
   );
 }
 
@@ -128,14 +203,12 @@ function SourceTile({ source }: { source: Source }) {
       <span className="font-mono text-xs text-faint group-hover:text-gold">
         {source.slug}
       </span>
-      <span className="text-base font-semibold tracking-tight">
-        {source.name}
-      </span>
+      <span className="text-base font-semibold">{source.name}</span>
       <span className="line-clamp-2 text-sm text-muted-foreground">
         {source.description}
       </span>
       <span className="mt-auto font-mono text-xs text-faint">
-        {formatKind(source.kind)} · {source.doc_count}{" "}
+        {formatKind(source.kind)} · {formatNumber(source.doc_count)}{" "}
         {source.doc_count === 1 ? "doc" : "docs"}
       </span>
     </Link>
@@ -322,6 +395,22 @@ function isReadySource(source: Source) {
   return source.status === "active" && source.doc_count > 0;
 }
 
+function catalogStats(sources: Source[]): CatalogStats {
+  const lastSyncedAt =
+    sources
+      .map((s) => s.last_synced_at)
+      .filter((date): date is string => Boolean(date))
+      .sort()
+      .at(-1) ?? null;
+
+  return {
+    sources: sources.length,
+    docs: sources.reduce((sum, source) => sum + source.doc_count, 0),
+    categories: unique(sources.map((s) => s.category)).length,
+    lastSyncedAt,
+  };
+}
+
 function groupByCategory(sources: Source[]): [string, Source[]][] {
   const map = new Map<string, Source[]>();
   for (const s of sources) {
@@ -375,6 +464,18 @@ function formatCategory(value: string) {
     systems: "sistemas",
   };
   return labels[value] ?? value;
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+function formatNumber(value: number) {
+  return new Intl.NumberFormat("pt-BR").format(value);
 }
 
 function unique(values: string[]) {
